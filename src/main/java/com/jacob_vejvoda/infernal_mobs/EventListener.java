@@ -1,5 +1,6 @@
 package com.jacob_vejvoda.infernal_mobs;
 
+import cat.nyaa.utils.Message;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -229,70 +230,38 @@ public class EventListener implements Listener {
                 }
                 boolean isGhost = false;
                 try {
-                    if (((Zombie) event.getEntity()).getEquipment().getHelmet().getItemMeta().getDisplayName().equals("§fGhost Head")) {
+                    if (event.getEntity().getEquipment().getHelmet().getItemMeta().getDisplayName().equals("§fGhost Head")) {
                         isGhost = true;
                     }
                 } catch (Exception ex) {
                 }
                 if (aList.contains("ghost")) {
-                    EventListener.plugin.spawnGhost(event.getEntity().getLocation());
+                    EventListener.plugin.mobManager.spawnGhost(event.getEntity().getLocation());
                 }
-                Location dropSpot = null;
-                if (aList.contains("molten")) {
-                    final Location lavaSpot = dropSpot = event.getEntity().getLocation();
-                    dropSpot.setX(dropSpot.getX() - 2.0);
-                } else {
-                    dropSpot = event.getEntity().getLocation();
-                }
-                if (EventListener.plugin.getConfig().getBoolean("enableDeathMessages") && event.getEntity().getKiller() instanceof Player && !isGhost) {
-                    final Player player = event.getEntity().getKiller();
-                    if (EventListener.plugin.getConfig().getList("deathMessages") != null) {
-                        final ArrayList<String> deathMessagesList = (ArrayList<String>) EventListener.plugin.getConfig().getList("deathMessages");
-                        final Random randomGenerator = new Random();
-                        final int index = randomGenerator.nextInt(deathMessagesList.size());
-                        String deathMessage = deathMessagesList.get(index);
-                        final String tittle = EventListener.plugin.gui.getMobNameTag((Entity) event.getEntity());
-                        deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
-                        deathMessage = deathMessage.replace("player", player.getName());
-                        if (player.getItemInHand() != null && !player.getItemInHand().getType().equals((Object) Material.AIR)) {
-                            if (player.getItemInHand().getItemMeta().getDisplayName() != null) {
-                                deathMessage = deathMessage.replace("weapon", player.getItemInHand().getItemMeta().getDisplayName());
-                            } else {
-                                deathMessage = deathMessage.replace("weapon", player.getItemInHand().getType().name().replace("_", " ").toLowerCase());
-                            }
-                        } else {
-                            deathMessage = deathMessage.replace("weapon", "fist");
-                        }
-                        if (event.getEntity().getCustomName() != null) {
-                            deathMessage = deathMessage.replace("mob", event.getEntity().getCustomName());
-                        } else {
-                            deathMessage = deathMessage.replace("mob", tittle);
-                        }
-                        Bukkit.broadcastMessage(deathMessage);
-                    } else {
-                        System.out.println("No valid death messages found!");
-                    }
-                }
+
+                // item drop decision
+                ItemStack selectedDropItem = null;
                 if (EventListener.plugin.getConfig().getBoolean("enableDrops") && (EventListener.plugin.getConfig().getBoolean("enableFarmingDrops") || event.getEntity().getKiller() != null) && (EventListener.plugin.getConfig().getBoolean("enableFarmingDrops") || event.getEntity().getKiller() instanceof Player)) {
                     Player player = null;
                     if (event.getEntity().getKiller() instanceof Player) {
                         player = event.getEntity().getKiller();
                     }
                     if (player != null && player.getGameMode().equals((Object) GameMode.CREATIVE) && EventListener.plugin.getConfig().getBoolean("noCreativeDrops")) {
-                        return;
-                    }
-                    final ItemStack drop = EventListener.plugin.getRandomLoot(player, event.getEntity().getType().getName(), aList.size());
-                    if (drop != null) {
-                        final int min = 1;
-                        final int max = EventListener.plugin.getConfig().getInt("dropChance");
-                        final int randomNum = new Random().nextInt(max - min + 1) + min;
-                        if (dropSpot != null && randomNum == 1) {
-                            final Item dropedItem = event.getEntity().getWorld().dropItemNaturally(dropSpot, drop);
-                            EventListener.plugin.keepAlive(dropedItem);
+
+                    } else {
+                        final ItemStack drop = EventListener.plugin.getRandomLoot(player, event.getEntity().getType().getName(), aList.size());
+                        if (drop != null) {
+                            final int min = 1;
+                            final int max = EventListener.plugin.getConfig().getInt("dropChance");
+                            final int randomNum = new Random().nextInt(max - min + 1) + min;
+                            if (randomNum == 1) {
+                                event.getDrops().add(drop);
+                                selectedDropItem = drop;
+                            }
+                            final int xpm = EventListener.plugin.getConfig().getInt("xpMultiplier");
+                            final int xp = event.getDroppedExp() * xpm;
+                            event.setDroppedExp(xp);
                         }
-                        final int xpm = EventListener.plugin.getConfig().getInt("xpMultiplier");
-                        final int xp = event.getDroppedExp() * xpm;
-                        event.setDroppedExp(xp);
                     }
                 }
                 try {
@@ -300,8 +269,51 @@ public class EventListener implements Listener {
                 } catch (Exception e) {
                     System.out.println("Error: " + e);
                 }
+
+                // print death message
+                if (EventListener.plugin.getConfig().getBoolean("enableDeathMessages") && event.getEntity().getKiller() != null && !isGhost) {
+                    Player player = event.getEntity().getKiller();
+                    String playerName = player.getName();
+                    String mobName;
+                    if (event.getEntity().getCustomName() != null) {
+                        mobName = event.getEntity().getCustomName();
+                    } else {
+                        mobName = event.getEntity().getType().name();
+                    }
+
+                    if (EventListener.plugin.getConfig().getList("deathMessages") != null) {
+                        String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
+                        deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
+                        deathMessage = deathMessage.replace("{player}", playerName);
+                        deathMessage = deathMessage.replace("{mob}", mobName);
+                        if (player.getItemInHand() != null && !player.getItemInHand().getType().equals(Material.AIR)) {
+                            new Message(deathMessage).append(player.getItemInHand()).broadcast();
+                        } else {
+                            Bukkit.broadcastMessage(deathMessage + "fist");
+                        }
+                    } else {
+                        System.out.println("No valid death messages found!");
+                    }
+
+                    if (plugin.getConfig().isList("dropMessages") && selectedDropItem != null) {
+                        String msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
+                        msg = ChatColor.translateAlternateColorCodes('&', msg);
+                        msg = msg.replace("{player}", playerName);
+                        msg = msg.replace("{mob}", mobName);
+                        new Message(msg).append(selectedDropItem).broadcast();
+                    }
+
+                    if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
+                        String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
+                        msg = ChatColor.translateAlternateColorCodes('&', msg);
+                        msg = msg.replace("{player}", playerName);
+                        msg = msg.replace("{mob}", mobName);
+                        Bukkit.broadcastMessage(msg);
+                    }
+                }
             }
         } catch (Exception e2) {
+            e2.printStackTrace();
             System.out.println("EntityDeathEvent: " + e2);
         }
     }

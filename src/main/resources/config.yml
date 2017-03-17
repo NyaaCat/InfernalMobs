@@ -60,12 +60,11 @@ effectAllPlayerAttacks: true
 enableParticles: true
 enableDeathMessages: false
 deathMessages:
-- '&cplayer &chas killed an mob&c!'
-- '&cAn mob &cwas slain by player&c!'
-- '&cplayer &cowned an mob&c!'
-- '&cAn mob &cwas beheaded by player&c''s weapon!'
-- '&cplayer&c''s weapon &ckilled an mob&c!'
-- '&cAn mob &cwas killed by player &cusing a weapon&c!'
+- '&c{player} killed {mob} using: '
+dropMessages:
+- '&c{mob} dropped: '
+nodropMessages:
+- '&cBut {mob} refused to share its fortune with {player}'
 enableSpawnMessages: false
 spawnMessageRadius: 64
 spawnMessages:

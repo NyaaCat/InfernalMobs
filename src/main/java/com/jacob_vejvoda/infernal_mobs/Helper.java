@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 public class Helper {
     public static List<Block> getSphere(final Block block1, final int radius) {
@@ -104,5 +105,11 @@ public class Helper {
 
     public static String getLocationName(final Location l) {
         return (String.valueOf(l.getX()) + "." + l.getY() + "." + l.getZ() + l.getWorld().getName()).replace(".", "");
+    }
+
+    public static <T> T randomItem(List<T> list) {
+        final Random randomGenerator = new Random();
+        final int index = randomGenerator.nextInt(list.size());
+        return list.get(index);
     }
 }

@@ -5,6 +5,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -335,5 +336,61 @@ public class MobManager {
         bat.setVelocity(new Vector(0, 1, 0));
         bat.setPassenger(ent);
         ((LivingEntity) bat).addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 1), true);
+    }
+
+    /**
+     * Spawn a ghost infernalMob
+     */
+    public void spawnGhost(final Location l) {
+        boolean evil = false;
+        if (new Random().nextInt(3) == 1) {
+            evil = true;
+        }
+        final Zombie g = (Zombie) l.getWorld().spawnEntity(l, EntityType.ZOMBIE);
+        g.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 199999980, 1));
+        g.setCanPickupItems(false);
+        final ItemStack chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
+        ItemStack skull;
+        if (evil) {
+            skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 1);
+            plugin.dye(chest, Color.BLACK);
+        } else {
+            skull = new ItemStack(Material.SKULL_ITEM, 1);
+            plugin.dye(chest, Color.WHITE);
+        }
+        chest.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, new Random().nextInt(10) + 1);
+        final ItemMeta m = skull.getItemMeta();
+        m.setDisplayName("§fGhost Head");
+        skull.setItemMeta(m);
+        g.getEquipment().setHelmet(skull);
+        g.getEquipment().setChestplate(chest);
+        g.getEquipment().setHelmetDropChance(0.0f);
+        g.getEquipment().setChestplateDropChance(0.0f);
+        final int min = 1;
+        final int max = 5;
+        final int rn = new Random().nextInt(max - min + 1) + min;
+        if (rn == 1) {
+            g.getEquipment().setItemInHand(new ItemStack(Material.STONE_HOE, 1));
+            g.getEquipment().setItemInHandDropChance(0.0f);
+        }
+        plugin.ghostMove((Entity) g);
+        final ArrayList<String> aList = new ArrayList<String>();
+        aList.add("ender");
+        if (evil) {
+            aList.add("necromancer");
+            aList.add("withering");
+            aList.add("blinding");
+        } else {
+            aList.add("ghastly");
+            aList.add("sapper");
+            aList.add("confusing");
+        }
+        Mob newMob;
+        if (evil) {
+            newMob = new Mob((Entity) g, g.getUniqueId(), g.getWorld(), false, aList, 1, "smoke:2:12");
+        } else {
+            newMob = new Mob((Entity) g, g.getUniqueId(), g.getWorld(), false, aList, 1, "cloud:0:8");
+        }
+        plugin.infernalList.add(newMob);
     }
 }
