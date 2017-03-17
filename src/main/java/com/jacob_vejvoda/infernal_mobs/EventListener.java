@@ -167,12 +167,12 @@ public class EventListener implements Listener {
         final World world = event.getEntity().getWorld();
         if (!event.getEntity().hasMetadata("NPC") && !event.getEntity().hasMetadata("shopkeeper") && event.getEntity().getCustomName() == null) {
             if (event.getSpawnReason().equals((Object) CreatureSpawnEvent.SpawnReason.SPAWNER)) {
-                final Block spawner = EventListener.plugin.blockNear(event.getEntity().getLocation(), Material.MOB_SPAWNER, 10);
+                final Block spawner = Helper.blockNear(event.getEntity().getLocation(), Material.MOB_SPAWNER, 10);
                 if (spawner != null) {
-                    final String name = EventListener.plugin.getLocationName(spawner.getLocation());
+                    final String name = Helper.getLocationName(spawner.getLocation());
                     if (EventListener.plugin.mobSaveFile.getString("infernalSpanwers." + name) != null) {
                         if (this.spawnerMap.get(name) == null) {
-                            EventListener.plugin.makeInfernal((Entity) event.getEntity(), true);
+                            plugin.mobManager.makeInfernal((Entity) event.getEntity(), true);
                             this.spawnerMap.put(name, EventListener.plugin.serverTime);
                         } else {
                             final long startTime = this.spawnerMap.get(name);
@@ -180,7 +180,7 @@ public class EventListener implements Listener {
                             final long timePassed = endTime - startTime;
                             final int delay = EventListener.plugin.mobSaveFile.getInt("infernalSpanwers." + name);
                             if (timePassed >= delay) {
-                                EventListener.plugin.makeInfernal((Entity) event.getEntity(), true);
+                                plugin.mobManager.makeInfernal((Entity) event.getEntity(), true);
                                 this.spawnerMap.put(name, EventListener.plugin.serverTime);
                             } else {
                                 event.setCancelled(true);
@@ -194,7 +194,7 @@ public class EventListener implements Listener {
             }
             String entName = event.getEntity().getType().name();
             if ((EventListener.plugin.getConfig().getList("enabledworlds").contains(world.getName()) || EventListener.plugin.getConfig().getList("enabledworlds").contains("<all>")) && EventListener.plugin.getConfig().getList("enabledmobs").contains(entName) && EventListener.plugin.getConfig().getInt("naturalSpawnHeight") < event.getEntity().getLocation().getY() && EventListener.plugin.getConfig().getList("enabledSpawnReasons").contains(event.getSpawnReason().toString())) {
-                EventListener.plugin.makeInfernal((Entity) event.getEntity(), false);
+                plugin.mobManager.makeInfernal((Entity) event.getEntity(), false);
             }
         }
     }
@@ -202,7 +202,7 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(final BlockBreakEvent e) throws IOException {
         if (e.getBlock().getType().equals((Object) Material.MOB_SPAWNER)) {
-            final String name = EventListener.plugin.getLocationName(e.getBlock().getLocation());
+            final String name = Helper.getLocationName(e.getBlock().getLocation());
             if (EventListener.plugin.mobSaveFile.getString("infernalSpanwers." + name) != null) {
                 EventListener.plugin.mobSaveFile.set("infernalSpanwers." + name, (Object) null);
                 EventListener.plugin.mobSaveFile.save(EventListener.plugin.saveYML);
