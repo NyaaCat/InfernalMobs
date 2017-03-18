@@ -60,9 +60,9 @@ effectAllPlayerAttacks: true
 enableParticles: true
 enableDeathMessages: false
 deathMessages:
-- '&c{player} killed {mob} using: '
+- '&c{player} killed {mob} using {itemName:0}'
 dropMessages:
-- '&c{mob} dropped: '
+- '&c{mob} dropped: {itemName:0} *{amount:0}'
 nodropMessages:
 - '&cBut {mob} refused to share its fortune with {player}'
 enableSpawnMessages: false

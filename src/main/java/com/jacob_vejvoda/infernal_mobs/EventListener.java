@@ -236,9 +236,9 @@ public class EventListener implements Listener {
                     deathMessage = deathMessage.replace("{player}", playerName);
                     deathMessage = deathMessage.replace("{mob}", mobName);
                     if (player.getItemInHand() != null && !player.getItemInHand().getType().equals(Material.AIR)) {
-                        new Message(deathMessage).append(player.getItemInHand()).broadcast();
+                        new Message("").append(deathMessage, player.getItemInHand()).broadcast();
                     } else {
-                        Bukkit.broadcastMessage(deathMessage + "fist");
+                        Bukkit.broadcastMessage(deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist"));
                     }
                 } else {
                     System.out.println("No valid death messages found!");
@@ -249,7 +249,7 @@ public class EventListener implements Listener {
                     msg = ChatColor.translateAlternateColorCodes('&', msg);
                     msg = msg.replace("{player}", playerName);
                     msg = msg.replace("{mob}", mobName);
-                    new Message(msg).append(selectedDropItem).broadcast();
+                    new Message("").append(msg, selectedDropItem).broadcast();
                 }
 
                 if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
