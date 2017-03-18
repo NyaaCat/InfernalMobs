@@ -920,9 +920,7 @@ public class infernal_mobs extends JavaPlugin {
             } else if (ability.equals("morph") && this.isLegitVictim(atc, playerIsVictom, ability)) {
                 try {
                     final int mc = new Random().nextInt(25) + 1;
-                    if (mc != 20) {
-                        return;
-                    }
+                    if (mc!=20) return;
                     final Location l = atc.getLocation().clone();
                     final double h = ((Damageable) atc).getHealth();
                     final List<String> aList = m.abilityList;
@@ -939,22 +937,16 @@ public class infernal_mobs extends JavaPlugin {
                     final int index = new Random().nextInt(mList.size());
                     final String mobName = mList.get(index);
                     Entity newEnt = null;
-                    EntityType[] arrayOfEntityType;
-                    for (int j = (arrayOfEntityType = EntityType.values()).length, i = 0; i < j; ++i) {
-                        final EntityType e2 = arrayOfEntityType[i];
-                        try {
-                            if (e2.getName() != null && e2.getName().equalsIgnoreCase(mobName)) {
-                                newEnt = vic.getWorld().spawnEntity(l, e2);
-                            }
-                        } catch (Exception ex2) {
-                        }
-                    }
+                    EntityType entityType = EntityType.valueOf(mobName);
+                    newEnt = vic.getWorld().spawnEntity(l, entityType);
                     if (newEnt == null) {
                         System.out.println("Infernal Mobs can't find mob type: " + mobName + "!");
                         return;
                     }
+                    mobManager.mobMap.remove(m.id);
                     m.entity = newEnt;
                     m.id = newEnt.getUniqueId();
+                    mobManager.mobMap.put(m.id, m);
                     //Mob newMob = null;
                     if (aList.contains("1up")) {
                         m.lives = 2;
