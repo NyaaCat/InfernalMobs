@@ -15,6 +15,9 @@ class Mob {
     public String effect;
     public ArrayList<String> abilityList;
 
+    public Mob() {
+    }
+
     public Mob(final Entity type, final UUID i, final World w, final boolean in, final ArrayList<String> l, final int li, final String e) {
         this.abilityList = new ArrayList<String>();
         this.entity = type;

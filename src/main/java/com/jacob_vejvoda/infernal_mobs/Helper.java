@@ -1,8 +1,12 @@
 package com.jacob_vejvoda.infernal_mobs;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -111,5 +115,14 @@ public class Helper {
         final Random randomGenerator = new Random();
         final int index = randomGenerator.nextInt(list.size());
         return list.get(index);
+    }
+
+    public static void changeLeatherColor(final ItemStack item, final Color color) {
+        try {
+            final LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+            meta.setColor(color);
+            item.setItemMeta((ItemMeta) meta);
+        } catch (Exception ex) {
+        }
     }
 }

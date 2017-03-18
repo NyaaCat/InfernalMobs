@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -68,7 +69,7 @@ public class CommandHandler implements CommandExecutor {
                 sender.sendMessage("§eClick on a mob to send an error report about it.");
             } else if (args[0].equals("info")) {
                 sender.sendMessage("§eMounts: " + plugin.mountList.size());
-                sender.sendMessage("§eInfernals: " + plugin.infernalList.size());
+                sender.sendMessage("§eInfernals: " + plugin.mobManager.mobMap.size());
             } else if (args[0].equals("worldInfo")) {
                 final ArrayList<String> enWorldList = (ArrayList<String>) plugin.getConfig().getList("enabledworlds");
                 final World world = player.getWorld();
@@ -201,8 +202,8 @@ public class CommandHandler implements CommandExecutor {
                 if (plugin.getTarget(player) != null) {
                     final Entity targeted = plugin.getTarget(player);
                     final UUID mobId = targeted.getUniqueId();
-                    if (plugin.idSearch(mobId) != -1) {
-                        final ArrayList<String> oldMobAbilityList = plugin.findMobAbilities(mobId);
+                    if (plugin.mobManager.mobMap.containsKey(mobId)) {
+                        final List<String> oldMobAbilityList = plugin.mobManager.mobMap.get(mobId).abilityList;
                         if (!targeted.isDead()) {
                             sender.sendMessage("--Targeted Mob's Abilities--");
                             sender.sendMessage(oldMobAbilityList.toString());
@@ -216,9 +217,8 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equals("setInfernal") && args.length == 2) {
                 if (player.getTargetBlock((Set<Material>) null, 25).getType().equals((Object) Material.MOB_SPAWNER)) {
                     final int delay = Integer.parseInt(args[1]);
-                    final String name = Helper.getLocationName(player.getTargetBlock((Set<Material>) null, 25).getLocation());
-                    plugin.mobSaveFile.set("infernalSpanwers." + name, (Object) delay);
-                    plugin.mobSaveFile.save(plugin.saveYML);
+                    Location loc = player.getTargetBlock((Set<Material>) null, 25).getLocation();
+                    plugin.persist.validInfernalSpawners.put(loc, delay);
                     sender.sendMessage("§cSpawner set to infernal with a " + delay + " second delay!");
                 } else {
                     sender.sendMessage("§cYou must be looking a spawner to make it infernal!");
@@ -226,24 +226,18 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equals("kill") && args.length == 2) {
                 final int size = Integer.parseInt(args[1]);
                 for (final Entity e : player.getNearbyEntities((double) size, (double) size, (double) size)) {
-                    final int id2 = plugin.idSearch(e.getUniqueId());
-                    if (id2 != -1) {
-                        plugin.removeMob(id2);
-                        e.remove();
-                        plugin.getLogger().log(Level.INFO, "Entity remove due to /kill");
-                    }
+                    plugin.removeMob(e.getUniqueId());
+                    e.remove();
+                    plugin.getLogger().log(Level.INFO, "Entity remove due to /kill");
                 }
                 sender.sendMessage("§eKilled all infernal mobs near you!");
             } else if (args[0].equals("killall") && args.length == 2) {
                 final World w = plugin.getServer().getWorld(args[1]);
                 if (w != null) {
                     for (final Entity e : w.getEntities()) {
-                        final int id2 = plugin.idSearch(e.getUniqueId());
-                        if (id2 != -1) {
-                            plugin.removeMob(id2);
-                            plugin.getLogger().log(Level.INFO, "Entity remove due to /killall");
-                            e.remove();
-                        }
+                        plugin.removeMob(e.getUniqueId());
+                        plugin.getLogger().log(Level.INFO, "Entity remove due to /killall");
+                        e.remove();
                     }
                     sender.sendMessage("§eKilled all loaded infernal mobs in that world!");
                 } else {

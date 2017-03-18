@@ -11,7 +11,6 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -33,7 +32,7 @@ public class GUI implements Listener {
     public static void fixBar(final Player p) {
         double dis = 26.0;
         Entity b = null;
-        for (final Mob m : GUI.plugin.infernalList) {
+        for (final Mob m : plugin.mobManager.mobMap.values()) {
             if (m.entity.getWorld().equals(p.getWorld())) {
                 final Entity boss = m.entity;
                 if (p.getLocation().distance(boss.getLocation()) >= dis) {
@@ -45,20 +44,14 @@ public class GUI implements Listener {
         }
         if (b != null) {
             if (b.isDead() || ((Damageable) b).getHealth() <= 0.0) {
-                final int mobIndex = GUI.plugin.idSearch(b.getUniqueId());
-                try {
-                    if (mobIndex != -1) {
-                        GUI.plugin.removeMob(mobIndex);
-                    }
-                } catch (IOException ex2) {
-                }
+                plugin.removeMob(b.getUniqueId());
                 clearInfo(p);
             } else {
                 if (GUI.plugin.getConfig().getBoolean("enableBossBar")) {
                     showBossBar(p, b);
                 }
                 if (GUI.plugin.getConfig().getBoolean("enableScoreBoard")) {
-                    fixScoreboard(p, b, GUI.plugin.findMobAbilities(b.getUniqueId()));
+                    fixScoreboard(p, b, GUI.plugin.mobManager.mobMap.get(b.getUniqueId()).abilityList);
                 }
             }
         } else {
@@ -67,7 +60,7 @@ public class GUI implements Listener {
     }
 
     public static void showBossBar(final Player p, final Entity e) {
-        final ArrayList<String> oldMobAbilityList = GUI.plugin.findMobAbilities(e.getUniqueId());
+        final ArrayList<String> oldMobAbilityList = GUI.plugin.mobManager.mobMap.get(e.getUniqueId()).abilityList;
         String tittle;
         if (GUI.plugin.getConfig().getString("bossBarsName") != null) {
             tittle = GUI.plugin.getConfig().getString("bossBarsName");
@@ -176,7 +169,7 @@ public class GUI implements Listener {
     }
 
     public String getMobNameTag(final Entity entity) {
-        final ArrayList<String> oldMobAbilityList = GUI.plugin.findMobAbilities(entity.getUniqueId());
+        final ArrayList<String> oldMobAbilityList = GUI.plugin.mobManager.mobMap.get(entity.getUniqueId()).abilityList;
         String tittle = null;
         try {
             if (GUI.plugin.getConfig().getString("nameTagsName") != null) {

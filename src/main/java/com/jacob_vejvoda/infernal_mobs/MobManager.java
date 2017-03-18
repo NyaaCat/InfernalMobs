@@ -11,13 +11,12 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 
 public class MobManager {
     private final infernal_mobs plugin;
+    public final Map<UUID, Mob> mobMap = new HashMap<>();
 
     public MobManager(infernal_mobs plugin) {
         this.plugin = plugin;
@@ -31,13 +30,19 @@ public class MobManager {
         if (abilities.contains("flying")) {
             plugin.mobManager.makeFly(spawnedEntity);
         }
-        plugin.infernalList.add(mob);
+        mobMap.put(id, mob);
         plugin.gui.setName(spawnedEntity);
         plugin.mobManager.giveMobGear(spawnedEntity, false);
-        plugin.addHealth(spawnedEntity, abilities);
+        plugin.addHealth(mob);
         return mob;
     }
 
+    /**
+     * Change the given entity into infernal mob
+     *
+     * @param e     the entity
+     * @param fixed
+     */
     public void makeInfernal(final Entity e, final boolean fixed) {
         final boolean mobEnabled = true;
         String entName = e.getType().name();
@@ -113,7 +118,8 @@ public class MobManager {
                 @Override
                 public void run() {
                     String entName = e.getType().name();
-                    if (!e.isDead() && e.isValid() && e != null && ((plugin.getConfig().getList("enabledmobs").contains(entName) && mobEnabled2) || (fixed && plugin.idSearch(id) == -1))) {
+                    if (!e.isDead() && e.isValid() && ((plugin.getConfig().getList("enabledmobs").contains(entName) && mobEnabled2) ||
+                            (fixed))) {
                         final int min = 1;
                         int max = chance;
                         final int mc = plugin.getConfig().getInt("mobChances." + entName);
@@ -142,10 +148,10 @@ public class MobManager {
                             if (aList.contains("flying")) {
                                 plugin.mobManager.makeFly(e);
                             }
-                            plugin.infernalList.add(newMob);
+                            mobMap.put(id, newMob);
                             plugin.gui.setName(e);
                             plugin.mobManager.giveMobGear(e, true);
-                            plugin.addHealth(e, aList);
+                            plugin.addHealth(newMob);
                             if (plugin.getConfig().getBoolean("enableSpawnMessages")) {
                                 if (plugin.getConfig().getList("spawnMessages") != null) {
                                     final ArrayList<String> spawnMessageList = (ArrayList<String>) plugin.getConfig().getList("spawnMessages");
@@ -186,14 +192,12 @@ public class MobManager {
 
     public void giveMobGear(final Entity mob, final boolean naturalSpawn) {
         final UUID mobId = mob.getUniqueId();
-        ArrayList<String> mobAbilityList = null;
+        if (!mobMap.containsKey(mobId)) return;
+        ArrayList<String> mobAbilityList = mobMap.get(mobId).abilityList;
         boolean armoured = false;
-        if (plugin.idSearch(mobId) != -1) {
-            mobAbilityList = plugin.findMobAbilities(mobId);
-            if (mobAbilityList.contains("armoured")) {
-                armoured = true;
-                ((LivingEntity) mob).setCanPickupItems(false);
-            }
+        if (mobAbilityList.contains("armoured")) {
+            armoured = true;
+            ((LivingEntity) mob).setCanPickupItems(false);
         }
         final ItemStack helm = new ItemStack(Material.DIAMOND_HELMET, 1);
         final ItemStack chest = new ItemStack(Material.DIAMOND_CHESTPLATE, 1);
@@ -353,10 +357,10 @@ public class MobManager {
         ItemStack skull;
         if (evil) {
             skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 1);
-            plugin.dye(chest, Color.BLACK);
+            Helper.changeLeatherColor(chest, Color.BLACK);
         } else {
             skull = new ItemStack(Material.SKULL_ITEM, 1);
-            plugin.dye(chest, Color.WHITE);
+            Helper.changeLeatherColor(chest, Color.WHITE);
         }
         chest.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, new Random().nextInt(10) + 1);
         final ItemMeta m = skull.getItemMeta();
@@ -391,6 +395,6 @@ public class MobManager {
         } else {
             newMob = new Mob((Entity) g, g.getUniqueId(), g.getWorld(), false, aList, 1, "cloud:0:8");
         }
-        plugin.infernalList.add(newMob);
+        mobMap.put(newMob.id, newMob);
     }
 }
