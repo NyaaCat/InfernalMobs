@@ -225,8 +225,8 @@ public class EventListener implements Listener {
                 }
                 final ArrayList<String> aList = EventListener.plugin.findMobAbilities(id);
                 if (aList.contains("explode")) {
-                    final TNTPrimed tnt = (TNTPrimed) event.getEntity().getWorld().spawnEntity(event.getEntity().getLocation(), EntityType.PRIMED_TNT);
-                    tnt.setFuseTicks(1);
+                    Location loc = event.getEntity().getLocation();
+                    loc.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), 4, false, false);
                 }
                 boolean isGhost = false;
                 try {
