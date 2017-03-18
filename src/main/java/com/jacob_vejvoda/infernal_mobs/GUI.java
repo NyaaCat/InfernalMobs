@@ -134,10 +134,10 @@ public class GUI implements Listener {
             }
             int score = 1;
             for (final String ability : abilityList) {
-                o.getScore("§r" + ability).setScore(score);
+                o.getScore(ChatColor.RESET.toString() + ability).setScore(score);
                 ++score;
             }
-            o.getScore("§e§lAbilities:").setScore(score);
+            o.getScore(ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + "Abilities:").setScore(score);
             if (GUI.plugin.getConfig().getBoolean("showHealthOnScoreBoard")) {
                 ++score;
                 final float health = (float) ((Damageable) e).getHealth();
@@ -145,7 +145,7 @@ public class GUI implements Listener {
                 final double roundOff = Math.round(health * 100.0) / 100.0;
                 o.getScore(String.valueOf(roundOff) + "/" + maxHealth).setScore(score);
                 ++score;
-                o.getScore("§e§lHealth:").setScore(score);
+                o.getScore(ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + "Health:").setScore(score);
             }
             if (player.getScoreboard() == null || player.getScoreboard().getObjective(DisplaySlot.SIDEBAR) == null || player.getScoreboard().getObjective(DisplaySlot.SIDEBAR).getName() == null || !player.getScoreboard().getObjective(DisplaySlot.SIDEBAR).getName().equals(board.getObjective(DisplaySlot.SIDEBAR).getName())) {
                 player.setScoreboard(board);
