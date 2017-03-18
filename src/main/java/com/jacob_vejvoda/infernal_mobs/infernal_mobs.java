@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.logging.Level;
 
 public class infernal_mobs extends JavaPlugin {
+    static infernal_mobs instance;
     public GUI gui;
     public YamlConfiguration lootConfig;
     public HashMap<Entity, Entity> mountList;
@@ -40,6 +41,7 @@ public class infernal_mobs extends JavaPlugin {
     }
 
     public void onEnable() {
+        instance = this;
         saveDefaultConfig();
         reloadConfig();
         saveResource("loot.yml", false);
