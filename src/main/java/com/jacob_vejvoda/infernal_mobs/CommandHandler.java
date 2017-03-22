@@ -226,18 +226,18 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equals("kill") && args.length == 2) {
                 final int size = Integer.parseInt(args[1]);
                 for (final Entity e : player.getNearbyEntities((double) size, (double) size, (double) size)) {
-                    plugin.removeMob(e.getUniqueId());
-                    e.remove();
-                    plugin.getLogger().log(Level.INFO, "Entity remove due to /kill");
+                    if (plugin.mobManager.mobMap.remove(e.getUniqueId())!=null) {
+                        e.remove();
+                    }
                 }
                 sender.sendMessage("§eKilled all infernal mobs near you!");
             } else if (args[0].equals("killall") && args.length == 2) {
                 final World w = plugin.getServer().getWorld(args[1]);
                 if (w != null) {
                     for (final Entity e : w.getEntities()) {
-                        plugin.removeMob(e.getUniqueId());
-                        plugin.getLogger().log(Level.INFO, "Entity remove due to /killall");
-                        e.remove();
+                        if (plugin.mobManager.mobMap.remove(e.getUniqueId()) != null) {
+                            e.remove();
+                        }
                     }
                     sender.sendMessage("§eKilled all loaded infernal mobs in that world!");
                 } else {

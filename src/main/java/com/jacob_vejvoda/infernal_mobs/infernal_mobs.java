@@ -1196,7 +1196,7 @@ public class infernal_mobs extends JavaPlugin {
                                 if (!this.isSmall(atc)) {
                                     loc2.setY(loc2.getY() + 1.0);
                                 }
-                                final Arrow a = (Arrow) ((LivingEntity) atc).launchProjectile((Class) Arrow.class);
+                                final Arrow a = ((LivingEntity) atc).launchProjectile(Arrow.class);
                                 final int arrowSpeed = 1;
                                 loc2.setY((double) (loc2.getBlockY() + 2));
                                 loc2.setX(loc2.getBlockX() + 0.5);
