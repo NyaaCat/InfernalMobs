@@ -81,15 +81,6 @@ public class CommandHandler implements CommandExecutor {
                 sender.sendMessage("All the world that are enabled are: " + enWorldList.toString());
             } else if (args[0].equals("help")) {
                 throwError(sender);
-            } else if (args[0].equals("getloot")) {
-                final int min = plugin.getConfig().getInt("minpowers");
-                final int max = plugin.getConfig().getInt("maxpowers");
-                final int powers = Helper.rand(min, max);
-                final ItemStack gottenLoot = plugin.getRandomLoot(player, plugin.getRandomMob(), powers);
-                if (gottenLoot != null) {
-                    player.getInventory().addItem(new ItemStack[]{gottenLoot});
-                }
-                sender.sendMessage("§eGave you some random loot!");
             } else if (args.length == 2 && args[0].equals("getloot")) {
                 try {
                     final int index = Integer.parseInt(args[1]);
@@ -102,7 +93,16 @@ public class CommandHandler implements CommandExecutor {
                 } catch (Exception ex) {
                 }
                 sender.sendMessage("§cUnable to get that loot!");
-            } else if ((args.length >= 2 && args[0].equals("spawn"))) { // spawn at cursor
+            } else if (args[0].equals("getloot")) {
+                final int min = plugin.getConfig().getInt("minpowers");
+                final int max = plugin.getConfig().getInt("maxpowers");
+                final int powers = Helper.rand(min, max);
+                final ItemStack gottenLoot = plugin.getRandomLoot(player, plugin.getRandomMob(), powers);
+                if (gottenLoot != null) {
+                    player.getInventory().addItem(new ItemStack[]{gottenLoot});
+                }
+                sender.sendMessage("§eGave you some random loot!");
+            }else if ((args.length >= 2 && args[0].equals("spawn"))) { // spawn at cursor
                 EntityType type = EntityType.fromName(args[1]);
                 if (type == null) {
                     sender.sendMessage("Can't spawn a " + args[1] + "!");
