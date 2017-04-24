@@ -83,11 +83,11 @@ public class CommandHandler implements CommandExecutor {
                 throwError(sender);
             } else if (args.length == 2 && args[0].equals("getloot")) {
                 try {
-                    final int index = Integer.parseInt(args[1]);
-                    final ItemStack i = plugin.getLoot(player, index);
+                    String name = args[1];
+                    final ItemStack i = plugin.lootManager.getLootByName(player, name);
                     if (i != null) {
                         player.getInventory().addItem(new ItemStack[]{i});
-                        sender.sendMessage("§eGave you the loot at index §9" + index);
+                        sender.sendMessage("§eGave you the loot: " + name);
                         return true;
                     }
                 } catch (Exception ex) {

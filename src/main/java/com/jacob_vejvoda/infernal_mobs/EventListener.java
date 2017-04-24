@@ -199,7 +199,7 @@ public class EventListener implements Listener {
                 if (player != null && player.getGameMode().equals((Object) GameMode.CREATIVE) && this.plugin.getConfig().getBoolean("noCreativeDrops")) {
 
                 } else {
-                    final ItemStack drop = this.plugin.getRandomLoot(player, event.getEntity().getType().getName(), aList.size());
+                    final ItemStack drop = this.plugin.lootManager.getRandomLoot(player, event.getEntity().getType().name(), aList.size());
                     if (drop != null) {
                         final int min = 1;
                         final int max = this.plugin.getConfig().getInt("dropChance");

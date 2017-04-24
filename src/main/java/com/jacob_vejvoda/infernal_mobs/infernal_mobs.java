@@ -24,13 +24,13 @@ import java.util.logging.Level;
 public class infernal_mobs extends JavaPlugin {
     static infernal_mobs instance;
     public GUI gui;
-    public YamlConfiguration lootConfig;
     public HashMap<Entity, Entity> mountList;
     public ArrayList<Player> errorList;
     public EventListener events;
     public CommandHandler cmd;
     public MobManager mobManager;
     public PersistStorage persist;
+    public LootManager lootManager;
 
     public infernal_mobs() {
         this.mountList = new HashMap<>();
@@ -42,18 +42,17 @@ public class infernal_mobs extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
         saveResource("loot.yml", false);
-        lootConfig = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "loot.yml"));
         persist = new PersistStorage(this, new File(getDataFolder(), "save.yml"));
         this.cmd = new CommandHandler(this);
         this.events = new com.jacob_vejvoda.infernal_mobs.EventListener(this);
         this.gui = new GUI(this);
         this.mobManager = new MobManager(this);
+        this.lootManager = new LootManager(this);
         this.getCommand("infernalmobs").setExecutor(cmd);
         this.getServer().getPluginManager().registerEvents(this.events, this);
         this.getServer().getPluginManager().registerEvents(this.gui, this);
         this.getLogger().log(Level.INFO, "Registered Events.");
         persist.loadToMemory();
-        this.applyEffect();
         this.showEffect();
     }
 
@@ -143,256 +142,6 @@ public class infernal_mobs extends JavaPlugin {
                 }
             }
         }, 2L);
-    }
-
-    public boolean mobPowerLevelFine(final int lootId, final int mobPowers) {
-        int min = 0;
-        int max = 99;
-        if (this.lootConfig.getString("loot." + lootId + ".powersMin") != null) {
-            min = this.lootConfig.getInt("loot." + lootId + ".powersMin");
-        }
-        if (this.lootConfig.getString("loot." + lootId + ".powersMax") != null) {
-            max = this.lootConfig.getInt("loot." + lootId + ".powersMax");
-        }
-        if (this.getConfig().getBoolean("debug")) {
-            this.getLogger().log(Level.INFO, "Loot " + lootId + " min = " + min + " and max = " + max);
-        }
-        return mobPowers >= min && mobPowers <= max;
-    }
-
-    public ItemStack getRandomLoot(final Player player, final String mob, final int powers) {
-        final ArrayList<Integer> lootList = new ArrayList<Integer>();
-        for (final String i : this.lootConfig.getConfigurationSection("loot").getKeys(false)) {
-            if (this.lootConfig.getString("loot." + i) != null && (this.lootConfig.getList("loot." + i + ".mobs") == null || this.lootConfig.getList("loot." + i + ".mobs").contains(mob)) && (this.lootConfig.getString("loot." + i + ".chancePercentage") == null || Helper.rand(1, 100) <= this.lootConfig.getInt("loot." + i + ".chancePercentage")) && this.mobPowerLevelFine(Integer.parseInt(i), powers)) {
-                lootList.add(Integer.valueOf(i));
-            }
-        }
-        try {
-            if (this.getConfig().getBoolean("debug")) {
-                this.getLogger().log(Level.INFO, "Loot List " + lootList.toString());
-            }
-            if (!lootList.isEmpty()) {
-                return this.getLoot(player, lootList.get(Helper.rand(1, lootList.size()) - 1));
-            }
-            return null;
-        } catch (Exception e) {
-            System.out.println("Error in get random loot ");
-            e.printStackTrace();
-            System.out.println("Error: No valid drops found!");
-            return null;
-        }
-    }
-
-    public ItemStack getLoot(final Player player, final int loot) {
-        if (this.lootConfig.getList("loot." + loot + ".commands") != null) {
-            final ArrayList<String> commandList = (ArrayList<String>) this.lootConfig.getList("loot." + loot + ".commands");
-            for (String command : commandList) {
-                command = ChatColor.translateAlternateColorCodes('&', command);
-                command = command.replace("player", player.getName());
-                Bukkit.getServer().dispatchCommand((CommandSender) Bukkit.getConsoleSender(), command);
-            }
-        }
-        return this.getItem(loot);
-    }
-
-    public ItemStack getItem(final int loot) {
-        try {
-            final int setItem = this.lootConfig.getInt("loot." + loot + ".item");
-            final String setAmountString = this.lootConfig.getString("loot." + loot + ".amount");
-            int setAmount;
-            if (setAmountString != null) {
-                setAmount = this.getIntFromString(setAmountString);
-            } else {
-                setAmount = 1;
-            }
-            final ItemStack stack = new ItemStack(setItem, setAmount);
-            if (this.lootConfig.getString("loot." + loot + ".durability") != null) {
-                final String durabilityString = this.lootConfig.getString("loot." + loot + ".durability");
-                final int durability = this.getIntFromString(durabilityString);
-                stack.setDurability((short) durability);
-            }
-            String name = null;
-            if (this.lootConfig.getString("loot." + loot + ".name") != null && this.lootConfig.isString("loot." + loot + ".name")) {
-                name = this.lootConfig.getString("loot." + loot + ".name");
-                name = this.prosessLootName(name, stack);
-            } else if (this.lootConfig.isList("loot." + loot + ".name")) {
-                final ArrayList<String> names = (ArrayList<String>) this.lootConfig.getList("loot." + loot + ".name");
-                if (names != null) {
-                    name = names.get(Helper.rand(1, names.size()) - 1);
-                    name = this.prosessLootName(name, stack);
-                }
-            }
-            final ArrayList<String> loreList = new ArrayList<String>();
-            for (int i = 0; i <= 32; ++i) {
-                if (this.lootConfig.getString("loot." + loot + ".lore" + i) != null) {
-                    String lore = this.lootConfig.getString("loot." + loot + ".lore" + i);
-                    lore = ChatColor.translateAlternateColorCodes('&', lore);
-                    loreList.add(lore);
-                }
-            }
-            if (this.lootConfig.getList("loot." + loot + ".lore") != null) {
-                final ArrayList<String> lb = (ArrayList<String>) this.lootConfig.getList("loot." + loot + ".lore");
-                final ArrayList<String> l = (ArrayList<String>) lb.clone();
-                int min = l.size();
-                if (this.lootConfig.getString("loot." + loot + ".minLore") != null) {
-                    min = this.lootConfig.getInt("loot." + loot + ".minLore");
-                }
-                int max = l.size();
-                if (this.lootConfig.getString("loot." + loot + ".maxLore") != null) {
-                    max = this.lootConfig.getInt("loot." + loot + ".maxLore");
-                }
-                if (!l.isEmpty()) {
-                    for (int j = 0; j < Helper.rand(min, max); ++j) {
-                        final String lore2 = l.get(Helper.rand(1, l.size()) - 1);
-                        l.remove(lore2);
-                        loreList.add(this.prosessLootName(lore2, stack));
-                    }
-                }
-            }
-            final ItemMeta meta = stack.getItemMeta();
-            if (name != null) {
-                meta.setDisplayName(name);
-            }
-            if (!loreList.isEmpty()) {
-                meta.setLore((List) loreList);
-            }
-            if (meta != null) {
-                stack.setItemMeta(meta);
-            }
-            if (this.lootConfig.getString("loot." + loot + ".colour") != null && stack.getType().toString().toLowerCase().contains("leather")) {
-                final String c = this.lootConfig.getString("loot." + loot + ".colour");
-                final String[] split = c.split(",");
-                final Color colour = Color.fromRGB(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
-                Helper.changeLeatherColor(stack, colour);
-            }
-            if (stack.getType().equals((Object) Material.WRITTEN_BOOK) || stack.getType().equals((Object) Material.BOOK_AND_QUILL)) {
-                final BookMeta bMeta = (BookMeta) stack.getItemMeta();
-                if (this.lootConfig.getString("loot." + loot + ".author") != null) {
-                    String author = this.lootConfig.getString("loot." + loot + ".author");
-                    author = ChatColor.translateAlternateColorCodes('&', author);
-                    bMeta.setAuthor(author);
-                }
-                if (this.lootConfig.getString("loot." + loot + ".title") != null) {
-                    String title = this.lootConfig.getString("loot." + loot + ".title");
-                    title = ChatColor.translateAlternateColorCodes('&', title);
-                    bMeta.setTitle(title);
-                }
-                if (this.lootConfig.getString("loot." + loot + ".pages") != null) {
-                    for (final String k : this.lootConfig.getConfigurationSection("loot." + loot + ".pages").getKeys(false)) {
-                        String page = this.lootConfig.getString("loot." + loot + ".pages." + k);
-                        page = ChatColor.translateAlternateColorCodes('&', page);
-                        bMeta.addPage(new String[]{page});
-                    }
-                }
-                stack.setItemMeta((ItemMeta) bMeta);
-            }
-            if (stack.getType().equals((Object) Material.BANNER)) {
-                final BannerMeta b = (BannerMeta) stack.getItemMeta();
-                final List<Pattern> patList = (List<Pattern>) this.lootConfig.getList("loot." + loot + ".patterns");
-                if (patList != null && !patList.isEmpty()) {
-                    b.setPatterns((List) patList);
-                }
-                stack.setItemMeta((ItemMeta) b);
-            }
-            if (stack.getType().equals((Object) Material.SKULL_ITEM) && stack.getDurability() == 3) {
-                final String owner = this.lootConfig.getString("loot." + loot + ".owner");
-                final SkullMeta sm = (SkullMeta) stack.getItemMeta();
-                sm.setOwner(owner);
-                stack.setItemMeta((ItemMeta) sm);
-            }
-            if ((this.lootConfig.getString("loot." + loot + ".potion") != null) &&
-                    ((stack.getType().equals(Material.POTION)) || (stack.getType().equals(Material.SPLASH_POTION)) || (stack.getType().equals(Material.LINGERING_POTION)))) {
-                PotionMeta pMeta = (PotionMeta) stack.getItemMeta();
-                String pn = this.lootConfig.getString("loot." + loot + ".potion");
-                pMeta.setBasePotionData(new PotionData(PotionType.getByEffect(PotionEffectType.getByName(pn)), false, false));
-                stack.setItemMeta(pMeta);
-            }
-            int enchAmount = 0;
-            for (int e = 0; e <= 10; ++e) {
-                if (this.lootConfig.getString("loot." + loot + ".enchantments." + e) != null) {
-                    ++enchAmount;
-                }
-            }
-            if (enchAmount > 0) {
-                int enMin = enchAmount;
-                int enMax = enchAmount;
-                if (this.lootConfig.getString("loot." + loot + ".minEnchantments") != null && this.lootConfig.getString("loot." + loot + ".maxEnchantments") != null) {
-                    enMin = this.lootConfig.getInt("loot." + loot + ".minEnchantments");
-                    enMax = this.lootConfig.getInt("loot." + loot + ".maxEnchantments");
-                }
-                int enchNeeded = new Random().nextInt(enMax + 1 - enMin) + enMin;
-                if (enchNeeded > enMax) {
-                    enchNeeded = enMax;
-                }
-                final ArrayList<LevelledEnchantment> enchList = new ArrayList<LevelledEnchantment>();
-                int safety = 0;
-                int m = 0;
-                do {
-                    if (this.lootConfig.getString("loot." + loot + ".enchantments." + m) != null) {
-                        int enChance = 1;
-                        if (this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".chance") != null) {
-                            enChance = this.lootConfig.getInt("loot." + loot + ".enchantments." + m + ".chance");
-                        }
-                        final int chance = new Random().nextInt(enChance - 1 + 1) + 1;
-                        if (chance == 1) {
-                            final String enchantment = this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".enchantment");
-                            final String levelString = this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".level");
-                            int level = this.getIntFromString(levelString);
-                            if (Enchantment.getByName(enchantment) == null) {
-                                System.out.println("Error: No valid drops found!");
-                                System.out.println("Error: " + enchantment + " is not a valid enchantment!");
-                                return null;
-                            }
-                            if (level < 1) {
-                                level = 1;
-                            }
-                            final LevelledEnchantment le = new LevelledEnchantment(Enchantment.getByName(enchantment), level);
-                            boolean con = false;
-                            for (final LevelledEnchantment testE : enchList) {
-                                if (testE.getEnchantment.equals((Object) le.getEnchantment)) {
-                                    con = true;
-                                }
-                            }
-                            if (!con) {
-                                enchList.add(le);
-                            }
-                        }
-                    }
-                    if (++m > enchAmount) {
-                        m = 0;
-                        ++safety;
-                    }
-                    if (safety >= enchAmount * 100) {
-                        System.out.println("Error: No valid drops found!");
-                        System.out.println("Error: Please increase chance for enchantments on item " + loot);
-                        return null;
-                    }
-                } while (enchList.size() != enchNeeded);
-                for (final LevelledEnchantment le2 : enchList) {
-                    if (stack.getType().equals((Object) Material.ENCHANTED_BOOK)) {
-                        final EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) stack.getItemMeta();
-                        enchantMeta.addStoredEnchant(le2.getEnchantment, le2.getLevel, true);
-                        stack.setItemMeta((ItemMeta) enchantMeta);
-                    } else {
-                        stack.addUnsafeEnchantment(le2.getEnchantment, le2.getLevel);
-                    }
-                }
-            }
-            return stack;
-        } catch (Exception e2) {
-            this.getLogger().log(Level.SEVERE, e2.getMessage(), true);
-            e2.printStackTrace();
-            return null;
-        }
-    }
-
-    private String prosessLootName(String name, final ItemStack stack) {
-        name = ChatColor.translateAlternateColorCodes('&', name);
-        String itemName = stack.getType().name();
-        itemName = itemName.replace("_", " ");
-        itemName = itemName.toLowerCase();
-        name = name.replace("<itemName>", itemName);
-        return name;
     }
 
     public int getIntFromString(final String setAmountString) {
@@ -657,79 +406,9 @@ public class infernal_mobs extends JavaPlugin {
         }, 1L);
     }
 
-    public void applyEffect() {
-        for (final Player p : this.getServer().getOnlinePlayers()) {
-            final World world = p.getWorld();
-            if (this.getConfig().getList("enabledworlds").contains(world.getName()) || this.getConfig().getList("enabledworlds").contains("<all>")) {
-                final HashMap<Integer, ItemStack> itemMap = new HashMap<Integer, ItemStack>();
-                for (Integer i : (ArrayList<Integer>) this.getConfig().getList("enabledCharmSlots")) {
-                    ItemStack in;
-                    in = p.getInventory().getItem(i);
-                    if (in != null) {
-                        itemMap.put(i, in);
-                    }
-                }
-                int ai = 100;
-                ItemStack[] armorContents;
-                for (int length = (armorContents = p.getInventory().getArmorContents()).length, j = 0; j < length; ++j) {
-                    final ItemStack ar = armorContents[j];
-                    if (ar != null) {
-                        itemMap.put(ai, ar);
-                        ++ai;
-                    }
-                }
-                if (this.lootConfig.getString("potionEffects") == null) {
-                    continue;
-                }
-                for (final String id : this.lootConfig.getConfigurationSection("potionEffects").getKeys(false)) {
-                    if (this.lootConfig.getString("potionEffects." + id) != null && this.lootConfig.getString("potionEffects." + id + ".attackEffect") == null && this.lootConfig.getString("potionEffects." + id + ".attackHelpEffect") == null) {
-                        final ArrayList<ItemStack> itemsPlayerHas = new ArrayList<ItemStack>();
-                        for (final int neededItemIndex : this.lootConfig.getIntegerList("potionEffects." + id + ".requiredItems")) {
-                            final ItemStack neededItem = this.getItem(neededItemIndex);
-                            for (final Map.Entry<Integer, ItemStack> hm : itemMap.entrySet()) {
-                                final ItemStack check = hm.getValue();
-                                try {
-                                    if ((neededItem.getItemMeta() != null && neededItem.getItemMeta().getDisplayName() != null && !check.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName())) || check.getTypeId() != neededItem.getTypeId() || (neededItem.getType().getMaxDurability() <= 0 && check.getDurability() != neededItem.getDurability()) || (this.isArmor(neededItem) && hm.getKey() < 100)) {
-                                        continue;
-                                    }
-                                    itemsPlayerHas.add(neededItem);
-                                } catch (Exception ex) {
-                                }
-                            }
-                        }
-                        if (itemsPlayerHas.size() < this.lootConfig.getIntegerList("potionEffects." + id + ".requiredItems").size()) {
-                            continue;
-                        }
-                        this.applyEffects((LivingEntity) p, Integer.parseInt(id));
-                    }
-                }
-            }
-        }
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask((Plugin) this, (Runnable) new Runnable() {
-            @Override
-            public void run() {
-                infernal_mobs.this.applyEffect();
-            }
-        }, 200L);
-    }
-
     private boolean isArmor(final ItemStack s) {
         final String t = s.getType().toString().toLowerCase();
         return t.contains("helm") || t.contains("plate") || t.contains("leg") || t.contains("boot");
-    }
-
-    public void applyEffects(final LivingEntity e, final int effectID) {
-        final int level = this.lootConfig.getInt("potionEffects." + effectID + ".level");
-        final String name = this.lootConfig.getString("potionEffects." + effectID + ".potion");
-        if (PotionEffectType.getByName(name).equals((Object) PotionEffectType.HARM) || PotionEffectType.getByName(name).equals((Object) PotionEffectType.HEAL)) {
-            e.addPotionEffect(new PotionEffect(PotionEffectType.getByName(name), 1, level - 1), true);
-        } else {
-            e.addPotionEffect(new PotionEffect(PotionEffectType.getByName(name), 400, level - 1), true);
-        }
-        if (this.lootConfig.getString("potionEffects." + effectID + ".particleEffect") != null) {
-            final String effect = this.lootConfig.getString("potionEffects." + effectID + ".particleEffect");
-            this.showEffectParticles((Entity) e, effect, 15);
-        }
     }
 
     private void showEffectParticles(final Entity p, final String e, final int time) {
@@ -808,58 +487,6 @@ public class infernal_mobs extends JavaPlugin {
                 final ItemStack ar = armorContents[j];
                 if (ar != null) {
                     items.add(ar);
-                }
-            }
-            for (int i = 0; i < 256; ++i) {
-                if (this.lootConfig.getString("potionEffects." + i) != null) {
-                    if (this.lootConfig.getString("potionEffects." + i + ".attackEffect") != null) {
-                        boolean effectsPlayer = true;
-                        if (this.lootConfig.getString("potionEffects." + i + ".attackEffect").equals("target")) {
-                            effectsPlayer = false;
-                        }
-                        for (final int neededItemIndex : this.lootConfig.getIntegerList("potionEffects." + i + ".requiredItems")) {
-                            final ItemStack neededItem = this.getItem(neededItemIndex);
-                            try {
-                                if ((neededItem.getItemMeta() != null && neededItem.getItemMeta().getDisplayName() != null && !itemUsed.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName())) || itemUsed.getTypeId() != neededItem.getTypeId() || (neededItem.getType().getMaxDurability() <= 0 && itemUsed.getDurability() != neededItem.getDurability())) {
-                                    continue;
-                                }
-                                if (effectsPlayer) {
-                                    this.applyEffects((LivingEntity) player, i);
-                                } else {
-                                    if (!(mob instanceof LivingEntity)) {
-                                        continue;
-                                    }
-                                    this.applyEffects((LivingEntity) mob, i);
-                                }
-                            } catch (Exception ex) {
-                            }
-                        }
-                    } else if (this.lootConfig.getString("potionEffects." + i + ".attackHelpEffect") != null) {
-                        boolean effectsPlayer = true;
-                        if (this.lootConfig.getString("potionEffects." + i + ".attackHelpEffect").equals("target")) {
-                            effectsPlayer = false;
-                        }
-                        final ArrayList<ItemStack> itemsPlayerHas = new ArrayList<ItemStack>();
-                        for (final int neededItemIndex2 : this.lootConfig.getIntegerList("potionEffects." + i + ".requiredItems")) {
-                            final ItemStack neededItem2 = this.getItem(neededItemIndex2);
-                            for (final ItemStack check : items) {
-                                try {
-                                    if ((neededItem2.getItemMeta() != null && neededItem2.getItemMeta().getDisplayName() != null && !check.getItemMeta().getDisplayName().equals(neededItem2.getItemMeta().getDisplayName())) || check.getTypeId() != neededItem2.getTypeId() || (neededItem2.getType().getMaxDurability() <= 0 && check.getDurability() != neededItem2.getDurability()) || itemsPlayerHas.contains(neededItem2)) {
-                                        continue;
-                                    }
-                                    itemsPlayerHas.add(neededItem2);
-                                } catch (Exception ex2) {
-                                }
-                            }
-                        }
-                        if (itemsPlayerHas.size() >= this.lootConfig.getIntegerList("potionEffects." + i + ".requiredItems").size()) {
-                            if (effectsPlayer) {
-                                this.applyEffects((LivingEntity) player, i);
-                            } else if (mob instanceof LivingEntity) {
-                                this.applyEffects((LivingEntity) mob, i);
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -1453,8 +1080,7 @@ public class infernal_mobs extends JavaPlugin {
     }
 
     public void reloadLoot() {
-        saveResource("loot.yml", false);
-        this.lootConfig = YamlConfiguration.loadConfiguration(new File(this.getDataFolder(), "loot.yml"));
+        this.lootManager.reload();
     }
 
 }
