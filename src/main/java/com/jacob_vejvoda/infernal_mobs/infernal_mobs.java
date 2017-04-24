@@ -12,10 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.Potion;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
+import org.bukkit.potion.*;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
@@ -302,6 +299,13 @@ public class infernal_mobs extends JavaPlugin {
                 final SkullMeta sm = (SkullMeta) stack.getItemMeta();
                 sm.setOwner(owner);
                 stack.setItemMeta((ItemMeta) sm);
+            }
+            if ((this.lootConfig.getString("loot." + loot + ".potion") != null) &&
+                    ((stack.getType().equals(Material.POTION)) || (stack.getType().equals(Material.SPLASH_POTION)) || (stack.getType().equals(Material.LINGERING_POTION)))) {
+                PotionMeta pMeta = (PotionMeta) stack.getItemMeta();
+                String pn = this.lootConfig.getString("loot." + loot + ".potion");
+                pMeta.setBasePotionData(new PotionData(PotionType.getByEffect(PotionEffectType.getByName(pn)), false, false));
+                stack.setItemMeta(pMeta);
             }
             int enchAmount = 0;
             for (int e = 0; e <= 10; ++e) {
