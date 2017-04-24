@@ -22,8 +22,7 @@ repositories {
     }
 }
 
-archivesBaseName = 'InfernalMobs-spigot1.11.2'
-version = '0.1'
+archivesBaseName = 'InfernalMobs'
 
 dependencies {
     compile 'org.spigotmc:spigot-api:1.11.2-R0.1-SNAPSHOT'
