@@ -11,7 +11,7 @@ before_deploy:
 - export GIT_ORIGIN_URL=`git config --get remote.origin.url`
 - git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER"
 - git config credential.helper "store --file=.git/credentials"
-- echo "https://${GITHUB_KEY}@github.com" > .git/credentials
+- echo "https://${GITHUB_KEY}:@github.com" > .git/credentials
 - git push -q --follow-tags
 - gem install octokit -v 4.3.0
 deploy:
@@ -30,3 +30,13 @@ env:
   global:
     - main_version=5.1
     - archivesBaseName=InfernalMobs
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/3.5/fileHashes/fileHashes.bin
+  - rm -f  $HOME/.gradle/caches/3.5/fileHashes/fileHashes.lock
+  - rm -f  $HOME/.gradle/caches/transforms-1/transforms-1.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
