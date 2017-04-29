@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import cat.nyaa.utils.Message;
+import cat.nyaa.utils.MessageType;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -229,16 +230,34 @@ public class EventListener implements Listener {
                 } else {
                     mobName = event.getEntity().getType().name();
                 }
+                boolean broadcastToAllWorld = this.plugin.getConfig().getBoolean("broadcastToAllWorld");
 
                 if (this.plugin.getConfig().getList("deathMessages") != null) {
                     String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
                     deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
                     deathMessage = deathMessage.replace("{player}", playerName);
                     deathMessage = deathMessage.replace("{mob}", mobName);
-                    if (player.getItemInHand() != null && !player.getItemInHand().getType().equals(Material.AIR)) {
-                        new Message("").append(deathMessage, player.getItemInHand()).broadcast();
+                    ItemStack item = player.getInventory().getItemInMainHand();
+                    if (item != null && !item.getType().equals(Material.AIR)) {
+                        if (broadcastToAllWorld) {
+                            new Message("")
+                                    .append(deathMessage, item)
+                                    .broadcast();
+                        } else {
+                            new Message("")
+                                    .append(deathMessage, item)
+                                    .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                        }
                     } else {
-                        Bukkit.broadcastMessage(deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist"));
+                        if (broadcastToAllWorld) {
+                            new Message(
+                                    deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
+                            ).broadcast();
+                        } else {
+                            new Message(
+                                    deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
+                            ).broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                        }
                     }
                 } else {
                     System.out.println("No valid death messages found!");
@@ -249,7 +268,15 @@ public class EventListener implements Listener {
                     msg = ChatColor.translateAlternateColorCodes('&', msg);
                     msg = msg.replace("{player}", playerName);
                     msg = msg.replace("{mob}", mobName);
-                    new Message("").append(msg, selectedDropItem).broadcast();
+                    if (broadcastToAllWorld) {
+                        new Message("")
+                                .append(msg, selectedDropItem)
+                                .broadcast();
+                    } else {
+                        new Message("")
+                                .append(msg, selectedDropItem)
+                                .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                    }
                 }
 
                 if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
@@ -257,7 +284,13 @@ public class EventListener implements Listener {
                     msg = ChatColor.translateAlternateColorCodes('&', msg);
                     msg = msg.replace("{player}", playerName);
                     msg = msg.replace("{mob}", mobName);
-                    Bukkit.broadcastMessage(msg);
+                    if (broadcastToAllWorld) {
+                        new Message(msg)
+                                .broadcast();
+                    } else {
+                        new Message(msg)
+                                .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                    }
                 }
             }
         } catch (Exception e2) {
