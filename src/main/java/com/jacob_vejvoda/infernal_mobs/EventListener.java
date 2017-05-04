@@ -1,7 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
-import cat.nyaa.utils.Message;
-import cat.nyaa.utils.MessageType;
+import cat.nyaa.nyaacore.Message;
+import cat.nyaa.nyaacore.Message.MessageType;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -246,7 +246,7 @@ public class EventListener implements Listener {
                         } else {
                             new Message("")
                                     .append(deathMessage, item)
-                                    .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                                    .broadcast(player.getLocation().getWorld());
                         }
                     } else {
                         if (broadcastToAllWorld) {
@@ -256,7 +256,7 @@ public class EventListener implements Listener {
                         } else {
                             new Message(
                                     deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                            ).broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                            ).broadcast(player.getLocation().getWorld());
                         }
                     }
                 } else {
@@ -275,7 +275,7 @@ public class EventListener implements Listener {
                     } else {
                         new Message("")
                                 .append(msg, selectedDropItem)
-                                .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                                .broadcast(player.getLocation().getWorld());
                     }
                 }
 
@@ -289,7 +289,7 @@ public class EventListener implements Listener {
                                 .broadcast();
                     } else {
                         new Message(msg)
-                                .broadcastToWorld(MessageType.CHAT, player.getLocation().getWorld().getName());
+                                .broadcast(player.getLocation().getWorld());
                     }
                 }
             }
