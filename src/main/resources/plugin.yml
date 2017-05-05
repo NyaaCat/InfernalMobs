@@ -1,6 +1,7 @@
 name: InfernalMobs
 main: com.jacob_vejvoda.infernal_mobs.infernal_mobs
 version: 5.1
+depend: [NyaaCore]
 softdepend: [Vault]
 
 commands:
