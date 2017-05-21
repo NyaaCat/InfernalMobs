@@ -9,6 +9,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -46,7 +47,8 @@ public class CommandHandler implements CommandExecutor {
                 return true;
             }
 
-            if (!isPlayer && !args[0].equals("cspawn") && !args[0].equals("reload") && !args[0].equals("killall")) {
+            if (!isPlayer && !args[0].equals("cspawn") && !args[0].equals("reload") && !args[0].equals("killall") &&
+                    !args[0].equals("setdrop") && !args[0].equals("checkchance")) {
                 sender.sendMessage("This command can only be run by a player!");
                 return true;
             }
@@ -243,6 +245,42 @@ public class CommandHandler implements CommandExecutor {
                 } else {
                     sender.sendMessage("§cWorld not found!");
                 }
+            } else if (args[0].equals("addloot")) {
+                if (args.length != 2) {
+                    sender.sendMessage("Hold the item in hand to add to loot list");
+                } else {
+                    if (sender instanceof Player) {
+                        ItemStack item = ((Player) sender).getInventory().getItemInMainHand();
+                        if (item != null && item.getType() != Material.AIR) {
+                            String name = args[1];
+                            LootManager.LootConfig.LootItem li = new LootManager.LootConfig.LootItem();
+                            li.item = item.clone();
+                            if (plugin.lootManager.cfg.lootItems.containsKey(name)) {
+                                sender.sendMessage("Fail. Duplicated name");
+                                return true;
+                            }
+                            plugin.lootManager.cfg.lootItems.put(name, li);
+                            plugin.lootManager.save();
+                            sender.sendMessage("Item Added.");
+                            return true;
+                        }
+                    }
+                    sender.sendMessage("Add fail. Please check if you are holding the item");
+                }
+            } else if (args[0].equals("setdrop")) {
+                if (args.length != 5) {
+                    sender.sendMessage("Available mob types:");
+                    for (EntityType e : EntityType.values()) sender.sendMessage("  " + e.name());
+                } else {
+                    Integer level = Integer.parseInt(args[1]);
+                    EntityType e = EntityType.valueOf(args[2]);
+                    String name = args[3];
+                    Double w = Double.parseDouble(args[4]);
+                    plugin.lootManager.cfg.setDropChance(level, e, name, w);
+                    plugin.lootManager.save();
+                }
+            } else if (args[0].equals("checkchance")) {
+                sender.sendMessage("ERROR: UNIMPLEMENTED.");
             } else {
                 throwError(sender);
             }
@@ -267,5 +305,9 @@ public class CommandHandler implements CommandExecutor {
         sender.sendMessage("Usage: /im pspawn <mob> <player> <ability> <ability>");
         sender.sendMessage("Usage: /im kill <size>");
         sender.sendMessage("Usage: /im killall <world>");
+        sender.sendMessage("Usage: /im addloot <name>");
+        sender.sendMessage("Usage: /im setdrop <level> <mobType> <name> <weight>");
+        sender.sendMessage("Usage: /im checkchance <level> <mobType>");
+        sender.sendMessage("Usage: /im checkchance <itemName>");
     }
 }

@@ -203,10 +203,16 @@ public class LootManager {
                 System.out.print(cfg.saveToString());
             }
         }
+
+        public void setDropChance(Integer level, EntityType e, String name, Double chance) {
+            if (!dropMap.containsKey(level)) dropMap.put(level, new HashMap<>());
+            if (!dropMap.get(level).containsKey(e)) dropMap.get(level).put(e, new HashMap<>());
+            dropMap.get(level).get(e).put(name, chance);
+        }
     }
 
     private final infernal_mobs plugin;
-    private LootConfig cfg;
+    public LootConfig cfg;
     public LootManager(infernal_mobs plugin) {
         this.plugin = plugin;
         if (new File(plugin.getDataFolder(),"loot_v2.yml").isFile()) { // loot file exists
@@ -248,6 +254,10 @@ public class LootManager {
         if (loot == null) return new ItemStack(Material.AIR);
         loot.applyCommands(player);
         return loot.get();
+    }
+
+    public void save() {
+        cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
     }
 
 //    public ItemStack getItem(final int loot) {
