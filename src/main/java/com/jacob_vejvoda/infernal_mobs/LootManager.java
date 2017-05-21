@@ -16,10 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 
 public class LootManager {
@@ -62,6 +59,7 @@ public class LootManager {
             RangePair amountRange;
             Map<Enchantment, RangePair> extraEnchants;
             List<String> commands;
+            /** get a randomized item to be given to player */
             public ItemStack get() {
                 ItemStack ret = item.clone();
                 if (damageRange != null) {
@@ -88,7 +86,7 @@ public class LootManager {
         }
 
         public Map<String, LootItem> lootItems;
-        public Map<EntityType, Map<Integer, Map<String, Double>>> dropMap; // Map<entityType, Map<infernalLevel, Map<dropItemName, dropWeight>>>
+        public Map<Integer, Map<EntityType, Map<String, Double>>> dropMap; // Map<infernalLevel, Map<entityType, Map<dropItemName, dropWeight>>>
 
         public static <T> T weightedRandom(Map<T, Double> candidates) {
             if (candidates.size() <= 0) return null;
@@ -108,15 +106,15 @@ public class LootManager {
         }
 
         public LootItem getRandomDrop(EntityType entityType, int level) {
-            if (!dropMap.containsKey(entityType)) {
-                infernal_mobs.instance.getLogger().warning("No drop found for entityType: " + entityType.name());
+            if (!dropMap.containsKey(level)) {
+                infernal_mobs.instance.getLogger().warning("No drop found for Level: " + level);
                 return null;
             }
-            if (!dropMap.get(entityType).containsKey(level)) {
+            if (!dropMap.get(level).containsKey(entityType)) {
                 infernal_mobs.instance.getLogger().warning("No drop found for entityType: " + entityType.name() + " at level=" + Integer.toString(level));
                 return null;
             }
-            String name = weightedRandom(dropMap.get(entityType).get(level));
+            String name = weightedRandom(dropMap.get(level).get(entityType));
             if (name == null) {
                 infernal_mobs.instance.getLogger().warning("No drop found for entityType: " + entityType.name() + " at level=" + Integer.toString(level));
                 return null;
@@ -130,8 +128,47 @@ public class LootManager {
 
         private LootConfig() {}
         public static LootConfig parse(File f) {
-            return new LootConfig();
-            // TODO
+            LootConfig l = new LootConfig();
+            l.lootItems = new HashMap<>();
+            l.dropMap = new HashMap<>();
+            YamlConfiguration cfg = YamlConfiguration.loadConfiguration(f);
+            ConfigurationSection items = cfg.getConfigurationSection("lootItems");
+            ConfigurationSection dropMap = cfg.getConfigurationSection("dropMap");
+            for (String itemName : items.getKeys(false)) {
+                ConfigurationSection s = items.getConfigurationSection(itemName);
+                LootItem i = new LootItem();
+                i.item = s.getItemStack("item");
+                if (s.isString("amountRange")) i.amountRange = RangePair.parse(s.getString("amountRange"));
+                if (s.isString("damageRange")) i.damageRange = RangePair.parse(s.getString("damageRange"));
+                if (s.isList("commands")) i.commands = s.getStringList("commands");
+                if (s.isConfigurationSection("extraEnchants")) {
+                    i.extraEnchants = new HashMap<>();
+                    ConfigurationSection sec = s.getConfigurationSection("extraEnchants");
+                    for (String ench : sec.getKeys(false)) {
+                        i.extraEnchants.put(Enchantment.getByName(ench), RangePair.parse(sec.getString(ench)));
+                    }
+                }
+                if (s.isString("amountRange")) i.amountRange = RangePair.parse(s.getString("amountRange"));
+                l.lootItems.put(itemName, i);
+            }
+
+            for (String levelKey : dropMap.getKeys(false)) {
+                if (!levelKey.startsWith("level-")) continue;
+                Integer level = Integer.parseInt(levelKey.substring(6));
+                ConfigurationSection levelMap = dropMap.getConfigurationSection(levelKey);
+                Map<EntityType, Map<String, Double>> map = new HashMap<>();
+                for (String entityName : levelMap.getKeys(false)) {
+                    EntityType e = EntityType.valueOf(entityName);
+                    ConfigurationSection entityMap = levelMap.getConfigurationSection(entityName);
+                    Map<String, Double> map2 = new HashMap<>();
+                    for (String dropName : entityMap.getKeys(false)) {
+                        map2.put(dropName, entityMap.getDouble(dropName));
+                    }
+                    map.put(e, map2);
+                }
+                l.dropMap.put(level, map);
+            }
+            return l;
         }
 
         public void dump(File f) {
@@ -145,11 +182,19 @@ public class LootManager {
                 if (item.amountRange != null) s.set("amountRange", item.amountRange.toString());
                 if (item.damageRange != null) s.set("damageRange", item.damageRange.toString());
                 if (item.commands != null) s.set("commands", item.commands);
-                if (item.extraEnchants != null) s.createSection("extraEnchants", item.extraEnchants);
+                if (item.extraEnchants != null) {
+                    ConfigurationSection sec = s.createSection("extraEnchants");
+                    for (Enchantment e : item.extraEnchants.keySet()) {
+                        sec.set(e.getName(), item.extraEnchants.get(e).get());
+                    }
+                }
             }
 
-            for (EntityType t : this.dropMap.keySet()) {
-                dropMap.createSection(t.name(), this.dropMap.get(t));
+            for (Integer level : this.dropMap.keySet()) {
+                ConfigurationSection sec = dropMap.createSection("level-" + level.toString());
+                for (Map.Entry<EntityType, Map<String, Double>> e : this.dropMap.get(level).entrySet()) {
+                    sec.createSection(e.getKey().name(), e.getValue());
+                }
             }
             try {
                 cfg.save(f);
