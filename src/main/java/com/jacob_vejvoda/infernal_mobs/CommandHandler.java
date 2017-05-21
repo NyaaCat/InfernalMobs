@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CommandHandler implements CommandExecutor {
     private final infernal_mobs plugin;
@@ -23,11 +24,11 @@ public class CommandHandler implements CommandExecutor {
 
     @Override
     public boolean onCommand(final CommandSender sender, final Command cmd, final String label, final String[] args) {
-        if (!cmd.getName().equals("infernalmobs")) {
-            if (!cmd.getName().equals("im")) {
-                return true;
-            }
-        }
+//        if (!cmd.getName().equals("infernalmobs")) {
+//            if (!cmd.getName().equals("im")) {
+//                return true;
+//            }
+//        }
         try {
             Player player = null;
             boolean isPlayer = sender instanceof Player;
@@ -283,7 +284,22 @@ public class CommandHandler implements CommandExecutor {
                     sender.sendMessage(String.format("Listing drop chance for \"%s\" at level %d", e.name(), level));
                     m.forEach((k, v) -> sender.sendMessage(String.format("  %s: %.03f%%", k, v / sum * 100D)));
                 } else if (args.length == 2) {
-                    sender.sendMessage("unimplemented");
+                    Map2D<LevelTypePair, String, Double> map = new Map2D<>();
+                    for (Map.Entry<Integer, Map<EntityType, Map<String, Double>>> e : plugin.lootManager.cfg.dropMap.entrySet()) {
+                        for (Map.Entry<EntityType, Map<String, Double>> e2 : e.getValue().entrySet()) {
+                            LevelTypePair r = new LevelTypePair(e.getKey(), e2.getKey());
+                            map.setRow(r, normalize(e2.getValue()));
+                        }
+                    }
+                    sender.sendMessage(String.format("Listing drop chance for item \"%s\"", args[1]));
+                    Map<LevelTypePair, Double> m = map.getColumn(args[1]);
+                    if (m.size() == 0) {
+                        sender.sendMessage("Item never dropped");
+                    } else {
+                        normalize(m).entrySet().stream()
+                                .sorted((a,b)->a.getKey().compareTo(b.getKey()))
+                                .forEach(e->sender.sendMessage(String.format("  Level%2d(%s): %.03f%%", e.getKey().level, e.getKey().type.name(), e.getValue()*100D)));
+                    }
                 } else {
                     sender.sendMessage("Wrong param");
                 }
@@ -295,6 +311,35 @@ public class CommandHandler implements CommandExecutor {
             x.printStackTrace();
         }
         return true;
+    }
+
+    private <K> Map<K,Double> normalize(Map<K, Double> v) {
+        Double sum = v.values().stream().mapToDouble(Double::doubleValue).sum();
+        Map<K, Double> ret = new HashMap<>();
+        for (Map.Entry<K, Double> e : v.entrySet())
+            ret.put(e.getKey(), e.getValue() / sum);
+        return ret;
+    }
+
+    private class LevelTypePair implements Comparable<LevelTypePair> {
+        Integer level;
+        EntityType type;
+        LevelTypePair(Integer l, EntityType t) {
+            level = l;
+            type = t;
+        }
+
+        @Override
+        public int hashCode() {
+            return level.hashCode() ^ type.hashCode();
+        }
+
+        @Override
+        public int compareTo(LevelTypePair o) {
+            if (level < o.level) return -1;
+            if (level.equals(o.level)) return type.compareTo(o.type);
+            return 1;
+        }
     }
 
     public static void throwError(final CommandSender sender) {

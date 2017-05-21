@@ -204,7 +204,7 @@ public class LootManager {
                 if (item.extraEnchants != null) {
                     ConfigurationSection sec = s.createSection("extraEnchants");
                     for (Enchantment e : item.extraEnchants.keySet()) {
-                        sec.set(e.getName(), item.extraEnchants.get(e).get());
+                        sec.set(e.getName(), item.extraEnchants.get(e).toString());
                     }
                 }
             }
@@ -264,7 +264,9 @@ public class LootManager {
                 maxLevel = tmp;
             }
             List<EntityType> e = (s.isList("mobs") ? s.getStringList("mobs") : infernal_mobs.instance.getConfig().getStringList("enabledmobs"))
-                    .stream().filter(t -> t instanceof String).map(t -> EntityType.fromName(t)).collect(Collectors.toList());
+                    .stream().filter(t -> t instanceof String).map(t -> EntityType.valueOf(t))
+                    .filter(t->t!=null)
+                    .collect(Collectors.toList());
             for (Integer lv = minLevel; lv <= maxLevel; lv++) {
                 for (EntityType t : e) {
                     cfg.setDropChance(lv, t, itemIdx, 100D);
