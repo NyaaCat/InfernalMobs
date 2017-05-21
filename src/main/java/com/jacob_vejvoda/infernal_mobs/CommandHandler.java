@@ -13,10 +13,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 public class CommandHandler implements CommandExecutor {
@@ -280,7 +277,18 @@ public class CommandHandler implements CommandExecutor {
                     plugin.lootManager.save();
                 }
             } else if (args[0].equals("checkchance")) {
-                sender.sendMessage("ERROR: UNIMPLEMENTED.");
+                if (args.length == 3) {
+                    Integer level = Integer.parseInt(args[1]);
+                    EntityType e = EntityType.valueOf(args[2]);
+                    Map<String, Double> m = plugin.lootManager.cfg.dropMap.get(level).get(e);
+                    Double sum = m.values().stream().mapToDouble(Double::doubleValue).sum();
+                    sender.sendMessage(String.format("Listing drop chance for \"%s\" at level %d", e.name(), level));
+                    m.forEach((k,v)->sender.sendMessage(String.format("  %s: %.03f%%", k, v/sum*100D)));
+                } else if (args.length == 2) {
+                    sender.sendMessage("unimplemented");
+                } else {
+                    sender.sendMessage("Wrong param");
+                }
             } else {
                 throwError(sender);
             }
