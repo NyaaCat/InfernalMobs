@@ -97,7 +97,7 @@ public class CommandHandler implements CommandExecutor {
                 final int min = plugin.getConfig().getInt("minpowers");
                 final int max = plugin.getConfig().getInt("maxpowers");
                 final int powers = Helper.rand(min, max);
-                final ItemStack gottenLoot = plugin.getRandomLoot(player, plugin.getRandomMob(), powers);
+                final ItemStack gottenLoot = plugin.lootManager.getRandomLoot(player, plugin.getRandomMob(), powers);
                 if (gottenLoot != null) {
                     player.getInventory().addItem(new ItemStack[]{gottenLoot});
                 }
