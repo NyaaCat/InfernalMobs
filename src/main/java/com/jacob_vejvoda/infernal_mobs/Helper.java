@@ -5,14 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -69,23 +63,6 @@ public class Helper {
         return r;
     }
 
-    /**
-     * write stream to file in data folder
-     */
-    public static void writeToDataFile(JavaPlugin plugin, InputStream inputStream, String fileName) {
-        try {
-            Files.copy(inputStream, new File(plugin.getDataFolder(), fileName).toPath());
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-
     public static Block blockNear(final Location l, final Material mat, final int radius) {
         final double xTmp = l.getX();
         final double yTmp = l.getY();
@@ -107,10 +84,6 @@ public class Helper {
         return null;
     }
 
-    public static String getLocationName(final Location l) {
-        return (String.valueOf(l.getX()) + "." + l.getY() + "." + l.getZ() + l.getWorld().getName()).replace(".", "");
-    }
-
     public static <T> T randomItem(List<T> list) {
         final Random randomGenerator = new Random();
         final int index = randomGenerator.nextInt(list.size());
@@ -121,7 +94,7 @@ public class Helper {
         try {
             final LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
             meta.setColor(color);
-            item.setItemMeta((ItemMeta) meta);
+            item.setItemMeta(meta);
         } catch (Exception ex) {
         }
     }

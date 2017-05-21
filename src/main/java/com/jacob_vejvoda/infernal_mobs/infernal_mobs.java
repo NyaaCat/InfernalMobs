@@ -2,17 +2,17 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.banner.Pattern;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.*;
+import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.*;
+import org.bukkit.potion.Potion;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
@@ -389,24 +389,6 @@ public class infernal_mobs extends JavaPlugin {
         }, 1L);
     }
 
-    private boolean isArmor(final ItemStack s) {
-        final String t = s.getType().toString().toLowerCase();
-        return t.contains("helm") || t.contains("plate") || t.contains("leg") || t.contains("boot");
-    }
-
-    private void showEffectParticles(final Entity p, final String e, final int time) {
-        this.displayEffect(p.getLocation(), e);
-        final int nt = time - 1;
-        if (time > 0) {
-            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask((Plugin) this, (Runnable) new Runnable() {
-                @Override
-                public void run() {
-                    infernal_mobs.this.showEffectParticles(p, e, nt);
-                }
-            }, 20L);
-        }
-    }
-
     private void levitate(final Entity e, final int time) {
         boolean couldFly = false;
         if (e instanceof Player && ((Player) e).getAllowFlight()) {
@@ -534,7 +516,7 @@ public class infernal_mobs extends JavaPlugin {
             } else if (ability.equals("morph") && this.isLegitVictim(atc, playerIsVictom, ability)) {
                 try {
                     final int mc = new Random().nextInt(25) + 1;
-                    if (mc!=20) return;
+                    if (mc != 20) return;
                     final Location l = atc.getLocation().clone();
                     final double h = ((Damageable) atc).getHealth();
                     final List<String> aList = m.abilityList;

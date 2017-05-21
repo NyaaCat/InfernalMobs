@@ -9,12 +9,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.logging.Level;
 
 public class CommandHandler implements CommandExecutor {
     private final infernal_mobs plugin;
@@ -101,7 +99,7 @@ public class CommandHandler implements CommandExecutor {
                     player.getInventory().addItem(new ItemStack[]{gottenLoot});
                 }
                 sender.sendMessage("§eGave you some random loot!");
-            }else if ((args.length >= 2 && args[0].equals("spawn"))) { // spawn at cursor
+            } else if ((args.length >= 2 && args[0].equals("spawn"))) { // spawn at cursor
                 EntityType type = EntityType.fromName(args[1]);
                 if (type == null) {
                     sender.sendMessage("Can't spawn a " + args[1] + "!");
@@ -225,7 +223,7 @@ public class CommandHandler implements CommandExecutor {
             } else if (args[0].equals("kill") && args.length == 2) {
                 final int size = Integer.parseInt(args[1]);
                 for (final Entity e : player.getNearbyEntities((double) size, (double) size, (double) size)) {
-                    if (plugin.mobManager.mobMap.remove(e.getUniqueId())!=null) {
+                    if (plugin.mobManager.mobMap.remove(e.getUniqueId()) != null) {
                         e.remove();
                     }
                 }
@@ -283,7 +281,7 @@ public class CommandHandler implements CommandExecutor {
                     Map<String, Double> m = plugin.lootManager.cfg.dropMap.get(level).get(e);
                     Double sum = m.values().stream().mapToDouble(Double::doubleValue).sum();
                     sender.sendMessage(String.format("Listing drop chance for \"%s\" at level %d", e.name(), level));
-                    m.forEach((k,v)->sender.sendMessage(String.format("  %s: %.03f%%", k, v/sum*100D)));
+                    m.forEach((k, v) -> sender.sendMessage(String.format("  %s: %.03f%%", k, v / sum * 100D)));
                 } else if (args.length == 2) {
                     sender.sendMessage("unimplemented");
                 } else {

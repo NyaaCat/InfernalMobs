@@ -21,8 +21,8 @@ public class GUI implements Listener {
     static HashMap<Entity, BossBar> bossBars;
 
     static {
-        GUI.playerScoreBoard = new HashMap<String, Scoreboard>();
-        GUI.bossBars = new HashMap<Entity, BossBar>();
+        GUI.playerScoreBoard = new HashMap<>();
+        GUI.bossBars = new HashMap<>();
     }
 
     public GUI(final infernal_mobs instance) {

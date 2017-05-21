@@ -1,7 +1,6 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import cat.nyaa.nyaacore.Message;
-import cat.nyaa.nyaacore.Message.MessageType;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;

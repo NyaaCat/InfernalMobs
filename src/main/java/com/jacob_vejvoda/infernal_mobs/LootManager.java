@@ -12,7 +12,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.util.*;
@@ -26,17 +25,10 @@ public class LootManager {
         public static class RangePair {
             int min;
             int max;
+
             public RangePair(int min, int max) {
                 this.min = min;
                 this.max = max;
-            }
-
-            public int get() {
-                return rnd.nextInt(max-min+1)+min;
-            }
-            @Override
-            public String toString() {
-                return String.format("%d-%d", min, max);
             }
 
             public static RangePair parse(String str) {
@@ -47,9 +39,18 @@ public class LootManager {
                     if (min < max) return new RangePair(min, max);
                     else return new RangePair(max, min);
                 } catch (Exception ex) {
-                    infernal_mobs.instance.getLogger().warning("Bad range pair:"+str);
+                    infernal_mobs.instance.getLogger().warning("Bad range pair:" + str);
                     return null;
                 }
+            }
+
+            public int get() {
+                return rnd.nextInt(max - min + 1) + min;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("%d-%d", min, max);
             }
         }
 
@@ -59,13 +60,17 @@ public class LootManager {
             RangePair amountRange;
             Map<Enchantment, RangePair> extraEnchants;
             List<String> commands;
-            /** get a randomized item to be given to player */
+
+            /**
+             * get a randomized item to be given to player
+             */
             public ItemStack get() {
                 ItemStack ret = item.clone();
                 if (damageRange != null) {
-                    short damageR = (short)damageRange.get();
+                    short damageR = (short) damageRange.get();
                     if (damageR < 0) damageR = 0;
-                    if (damageR >= item.getType().getMaxDurability()) damageR = (short)(item.getType().getMaxDurability()-1);
+                    if (damageR >= item.getType().getMaxDurability())
+                        damageR = (short) (item.getType().getMaxDurability() - 1);
                     item.setDurability(damageR);
                 }
                 if (amountRange != null) {
@@ -86,18 +91,22 @@ public class LootManager {
                 }
                 return ret;
             }
+
             public void applyCommands(Player p) {
                 if (commands == null) return;
                 for (String cmd : commands) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
-                        ChatColor.translateAlternateColorCodes('&', cmd)
-                            .replace("{player}", p.getName()));
+                            ChatColor.translateAlternateColorCodes('&', cmd)
+                                    .replace("{player}", p.getName()));
                 }
             }
         }
 
         public Map<String, LootItem> lootItems;
         public Map<Integer, Map<EntityType, Map<String, Double>>> dropMap; // Map<infernalLevel, Map<entityType, Map<dropItemName, dropWeight>>>
+
+        private LootConfig() {
+        }
 
         public static <T> T weightedRandom(Map<T, Double> candidates) {
             if (candidates.size() <= 0) return null;
@@ -137,7 +146,6 @@ public class LootManager {
             return lootItems.get(name);
         }
 
-        private LootConfig() {}
         public static LootConfig parse(File f) {
             LootConfig l = new LootConfig();
             l.lootItems = new HashMap<>();
@@ -220,58 +228,25 @@ public class LootManager {
             if (!dropMap.get(level).containsKey(e)) dropMap.get(level).put(e, new HashMap<>());
             dropMap.get(level).get(e).put(name, chance);
         }
+
     }
 
     private final infernal_mobs plugin;
     public LootConfig cfg;
+
     public LootManager(infernal_mobs plugin) {
         this.plugin = plugin;
-        if (new File(plugin.getDataFolder(),"loot_v2.yml").isFile()) { // loot file exists
-            cfg = LootConfig.parse(new File(plugin.getDataFolder(),"loot_v2.yml"));
-        } else if (new File(plugin.getDataFolder(),"loot.yml").isFile()) { // old config exists
-            cfg = parseOldConfig(new File(plugin.getDataFolder(),"loot.yml"));
-            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
+        if (new File(plugin.getDataFolder(), "loot_v2.yml").isFile()) { // loot file exists
+            cfg = LootConfig.parse(new File(plugin.getDataFolder(), "loot_v2.yml"));
+        } else if (new File(plugin.getDataFolder(), "loot.yml").isFile()) { // old config exists
+            cfg = parseOldConfig(new File(plugin.getDataFolder(), "loot.yml"));
+            cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
         } else { // no config file
             cfg = new LootConfig();
-            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
+            cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
         }
     }
 
-    public void reload() {
-        if (new File(plugin.getDataFolder(),"loot_v2.yml").isFile()) { // loot file exists
-            cfg = LootConfig.parse(new File(plugin.getDataFolder(),"loot_v2.yml"));
-        } else if (new File(plugin.getDataFolder(),"loot.yml").isFile()) { // old config exists
-            cfg = parseOldConfig(new File(plugin.getDataFolder(),"loot.yml"));
-            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
-        } else { // no config file
-            cfg = new LootConfig();
-            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
-        }
-    }
-
-    public ItemStack getLootByName(Player p, String name) {
-        if (!cfg.lootItems.containsKey(name)) return null;
-        cfg.lootItems.get(name).applyCommands(p);
-        return cfg.lootItems.get(name).get();
-    }
-
-    /**
-     * Give random loot, NOTE: commands will be applied here.
-     * @param player commands to be applied on
-     * @param mob mob type name
-     * @param powers mob power level
-     * @return the loot, or null
-     */
-    public ItemStack getRandomLoot(final Player player, final String mob, final int powers) {
-        LootConfig.LootItem loot = cfg.getRandomDrop(EntityType.valueOf(mob), powers);
-        if (loot == null) return new ItemStack(Material.AIR);
-        loot.applyCommands(player);
-        return loot.get();
-    }
-
-    public void save() {
-        cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
-    }
 
     private static LootConfig parseOldConfig(File f) {
         LootConfig cfg = new LootConfig();
@@ -279,14 +254,18 @@ public class LootManager {
         cfg.lootItems = new HashMap<>();
         YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
-            ConfigurationSection s = sec.getConfigurationSection("loot."+itemIdx);
+            ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
             LootConfig.LootItem l = getLootFromOldConfig(Integer.parseInt(itemIdx), sec);
             Integer minLevel = s.getInt("powerMin", 0);
             Integer maxLevel = s.getInt("powerMax", 24);
-            if (maxLevel<minLevel) {Integer tmp = minLevel; minLevel=maxLevel;maxLevel=tmp;}
-            List<EntityType> e = (s.isList("mobs")?s.getStringList("mobs"):infernal_mobs.instance.getConfig().getStringList("enabledmobs"))
-                    .stream().filter(t->t instanceof String).map(t->EntityType.fromName(t)).collect(Collectors.toList());
-            for (Integer lv = minLevel; lv<=maxLevel;lv++) {
+            if (maxLevel < minLevel) {
+                Integer tmp = minLevel;
+                minLevel = maxLevel;
+                maxLevel = tmp;
+            }
+            List<EntityType> e = (s.isList("mobs") ? s.getStringList("mobs") : infernal_mobs.instance.getConfig().getStringList("enabledmobs"))
+                    .stream().filter(t -> t instanceof String).map(t -> EntityType.fromName(t)).collect(Collectors.toList());
+            for (Integer lv = minLevel; lv <= maxLevel; lv++) {
                 for (EntityType t : e) {
                     cfg.setDropChance(lv, t, itemIdx, 100D);
                 }
@@ -295,7 +274,7 @@ public class LootManager {
         }
         return cfg;
     }
-    
+
     private static LootConfig.LootItem getLootFromOldConfig(int oldIndex, ConfigurationSection oldCfgRoot) {
         LootConfig.LootItem i = new LootConfig.LootItem();
         Map<Enchantment, LootConfig.RangePair> optionalEnchList = new HashMap<>();
@@ -308,8 +287,8 @@ public class LootManager {
         if (optionalEnchList.size() > 0)
             i.extraEnchants = optionalEnchList;
         if (sec.isList("commands"))
-            i.commands = sec.getStringList("commands").stream().filter(s->s instanceof String)
-                    .map(s->s.replace("<player>", "{player}")).collect(Collectors.toList());
+            i.commands = sec.getStringList("commands").stream().filter(s -> s instanceof String)
+                    .map(s -> s.replace("<player>", "{player}")).collect(Collectors.toList());
         return i;
     }
 
@@ -351,7 +330,7 @@ public class LootManager {
             }
             if (lootConfig.getList("loot." + lootIdx + ".lore") != null) {
                 loreList.addAll(lootConfig.getStringList("loot." + lootIdx + ".lore").stream()
-                        .map(s-> processLoreName(s, stack)).collect(Collectors.toList()));
+                        .map(s -> processLoreName(s, stack)).collect(Collectors.toList()));
             }
             final ItemMeta meta = stack.getItemMeta();
             if (name != null) {
@@ -422,7 +401,7 @@ public class LootManager {
                         Integer level = Integer.parseInt(l);
                         if (stack.getType().equals(Material.ENCHANTED_BOOK)) {
                             final EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) stack.getItemMeta();
-                            enchantMeta.addStoredEnchant(e,level, true);
+                            enchantMeta.addStoredEnchant(e, level, true);
                             stack.setItemMeta(enchantMeta);
                         } else {
                             stack.addUnsafeEnchantment(e, level);
@@ -440,10 +419,6 @@ public class LootManager {
 
     static private String processLoreName(String name, final ItemStack stack) {
         name = ChatColor.translateAlternateColorCodes('&', name);
-//        String itemName = stack.getType().name();
-//        itemName = itemName.replace("_", " ");
-//        itemName = itemName.toLowerCase();
-//        name = name.replace("<itemName>", itemName);
         return name;
     }
 
@@ -463,4 +438,42 @@ public class LootManager {
         }
         return setAmount;
     }
+
+    public void reload() {
+        if (new File(plugin.getDataFolder(), "loot_v2.yml").isFile()) { // loot file exists
+            cfg = LootConfig.parse(new File(plugin.getDataFolder(), "loot_v2.yml"));
+        } else if (new File(plugin.getDataFolder(), "loot.yml").isFile()) { // old config exists
+            cfg = parseOldConfig(new File(plugin.getDataFolder(), "loot.yml"));
+            cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
+        } else { // no config file
+            cfg = new LootConfig();
+            cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
+        }
+    }
+
+    public ItemStack getLootByName(Player p, String name) {
+        if (!cfg.lootItems.containsKey(name)) return null;
+        cfg.lootItems.get(name).applyCommands(p);
+        return cfg.lootItems.get(name).get();
+    }
+
+    /**
+     * Give random loot, NOTE: commands will be applied here.
+     *
+     * @param player commands to be applied on
+     * @param mob    mob type name
+     * @param powers mob power level
+     * @return the loot, or null
+     */
+    public ItemStack getRandomLoot(final Player player, final String mob, final int powers) {
+        LootConfig.LootItem loot = cfg.getRandomDrop(EntityType.valueOf(mob), powers);
+        if (loot == null) return new ItemStack(Material.AIR);
+        loot.applyCommands(player);
+        return loot.get();
+    }
+
+    public void save() {
+        cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
+    }
+
 }

@@ -9,6 +9,7 @@ import java.util.*;
 
 public final class InfernalMobsAPI {
     private static final Set<String> AVAILABLE_ABILITIES;
+
     static {
         AVAILABLE_ABILITIES = new HashSet<>();
         AVAILABLE_ABILITIES.add("mama");
@@ -52,7 +53,8 @@ public final class InfernalMobsAPI {
      * Check if the given entity is an infernal mob
      * null will be returned if the mob is not infernal
      * NOTE: Even a non-null value is returned, the mob may not exists (e.g. in unloaded chunks)
-     *       You may want to do extra check with Bukkit.getEntity(entityId)
+     * You may want to do extra check with Bukkit.getEntity(entityId)
+     *
      * @param entityId the entityUniqueId
      * @return the infernal mob
      */
@@ -67,8 +69,9 @@ public final class InfernalMobsAPI {
     /**
      * Spawn an infernal mob at the given location with given abilities
      * NOTE: invalid abilities will be ignored silently.
-     * @param type mob type
-     * @param location spawn location
+     *
+     * @param type        mob type
+     * @param location    spawn location
      * @param abilityList abilities
      * @return the spawned mob
      */
@@ -84,6 +87,7 @@ public final class InfernalMobsAPI {
 
     /**
      * All possible abilities, including those disabled in config file.
+     *
      * @return ability list
      */
     public static Set<String> getAvailableAbilities() {

@@ -15,8 +15,8 @@ import java.util.*;
 
 
 public class MobManager {
-    private final infernal_mobs plugin;
     public final Map<UUID, Mob> mobMap = new HashMap<>();
+    private final infernal_mobs plugin;
 
     public MobManager(infernal_mobs plugin) {
         this.plugin = plugin;
