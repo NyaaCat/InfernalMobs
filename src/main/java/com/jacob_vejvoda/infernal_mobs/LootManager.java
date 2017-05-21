@@ -5,19 +5,19 @@ import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.block.banner.Pattern;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class LootManager {
     public static final Random rnd = new Random();
@@ -63,14 +63,25 @@ public class LootManager {
             public ItemStack get() {
                 ItemStack ret = item.clone();
                 if (damageRange != null) {
-                    item.setDurability((short)damageRange.get());
+                    short damageR = (short)damageRange.get();
+                    if (damageR < 0) damageR = 0;
+                    if (damageR >= item.getType().getMaxDurability()) damageR = (short)(item.getType().getMaxDurability()-1);
+                    item.setDurability(damageR);
                 }
                 if (amountRange != null) {
                     item.setAmount(amountRange.get());
                 }
                 if (extraEnchants != null) {
-                    for (Enchantment e : extraEnchants.keySet()) {
-                        item.addUnsafeEnchantment(e, extraEnchants.get(e).get());
+                    if (item.getType() == Material.ENCHANTED_BOOK) {
+                        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+                        for (Enchantment e : extraEnchants.keySet()) {
+                            meta.addStoredEnchant(e, extraEnchants.get(e).get(), true);
+                        }
+                        item.setItemMeta(meta);
+                    } else {
+                        for (Enchantment e : extraEnchants.keySet()) {
+                            item.addUnsafeEnchantment(e, extraEnchants.get(e).get());
+                        }
                     }
                 }
                 return ret;
@@ -218,7 +229,8 @@ public class LootManager {
         if (new File(plugin.getDataFolder(),"loot_v2.yml").isFile()) { // loot file exists
             cfg = LootConfig.parse(new File(plugin.getDataFolder(),"loot_v2.yml"));
         } else if (new File(plugin.getDataFolder(),"loot.yml").isFile()) { // old config exists
-            // TODO upgrade
+            cfg = parseOldConfig(new File(plugin.getDataFolder(),"loot.yml"));
+            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
         } else { // no config file
             cfg = new LootConfig();
             cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
@@ -229,7 +241,8 @@ public class LootManager {
         if (new File(plugin.getDataFolder(),"loot_v2.yml").isFile()) { // loot file exists
             cfg = LootConfig.parse(new File(plugin.getDataFolder(),"loot_v2.yml"));
         } else if (new File(plugin.getDataFolder(),"loot.yml").isFile()) { // old config exists
-            // TODO upgrade
+            cfg = parseOldConfig(new File(plugin.getDataFolder(),"loot.yml"));
+            cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
         } else { // no config file
             cfg = new LootConfig();
             cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
@@ -260,196 +273,194 @@ public class LootManager {
         cfg.dump(new File(plugin.getDataFolder(),"loot_v2.yml"));
     }
 
-//    public ItemStack getItem(final int loot) {
-//        try {
-//            final int setItem = this.lootConfig.getInt("loot." + loot + ".item");
-//            final String setAmountString = this.lootConfig.getString("loot." + loot + ".amount");
-//            int setAmount;
-//            if (setAmountString != null) {
-//                setAmount = this.getIntFromString(setAmountString);
-//            } else {
-//                setAmount = 1;
-//            }
-//            final ItemStack stack = new ItemStack(setItem, setAmount);
-//            if (this.lootConfig.getString("loot." + loot + ".durability") != null) {
-//                final String durabilityString = this.lootConfig.getString("loot." + loot + ".durability");
-//                final int durability = this.getIntFromString(durabilityString);
-//                stack.setDurability((short) durability);
-//            }
-//            String name = null;
-//            if (this.lootConfig.getString("loot." + loot + ".name") != null && this.lootConfig.isString("loot." + loot + ".name")) {
-//                name = this.lootConfig.getString("loot." + loot + ".name");
-//                name = this.prosessLootName(name, stack);
-//            } else if (this.lootConfig.isList("loot." + loot + ".name")) {
-//                final ArrayList<String> names = (ArrayList<String>) this.lootConfig.getList("loot." + loot + ".name");
-//                if (names != null) {
-//                    name = names.get(Helper.rand(1, names.size()) - 1);
-//                    name = this.prosessLootName(name, stack);
-//                }
-//            }
-//            final ArrayList<String> loreList = new ArrayList<String>();
-//            for (int i = 0; i <= 32; ++i) {
-//                if (this.lootConfig.getString("loot." + loot + ".lore" + i) != null) {
-//                    String lore = this.lootConfig.getString("loot." + loot + ".lore" + i);
-//                    lore = ChatColor.translateAlternateColorCodes('&', lore);
-//                    loreList.add(lore);
-//                }
-//            }
-//            if (this.lootConfig.getList("loot." + loot + ".lore") != null) {
-//                final ArrayList<String> lb = (ArrayList<String>) this.lootConfig.getList("loot." + loot + ".lore");
-//                final ArrayList<String> l = (ArrayList<String>) lb.clone();
-//                int min = l.size();
-//                if (this.lootConfig.getString("loot." + loot + ".minLore") != null) {
-//                    min = this.lootConfig.getInt("loot." + loot + ".minLore");
-//                }
-//                int max = l.size();
-//                if (this.lootConfig.getString("loot." + loot + ".maxLore") != null) {
-//                    max = this.lootConfig.getInt("loot." + loot + ".maxLore");
-//                }
-//                if (!l.isEmpty()) {
-//                    for (int j = 0; j < Helper.rand(min, max); ++j) {
-//                        final String lore2 = l.get(Helper.rand(1, l.size()) - 1);
-//                        l.remove(lore2);
-//                        loreList.add(this.prosessLootName(lore2, stack));
-//                    }
-//                }
-//            }
-//            final ItemMeta meta = stack.getItemMeta();
-//            if (name != null) {
-//                meta.setDisplayName(name);
-//            }
-//            if (!loreList.isEmpty()) {
-//                meta.setLore((List) loreList);
-//            }
-//            if (meta != null) {
-//                stack.setItemMeta(meta);
-//            }
-//            if (this.lootConfig.getString("loot." + loot + ".colour") != null && stack.getType().toString().toLowerCase().contains("leather")) {
-//                final String c = this.lootConfig.getString("loot." + loot + ".colour");
-//                final String[] split = c.split(",");
-//                final Color colour = Color.fromRGB(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
-//                Helper.changeLeatherColor(stack, colour);
-//            }
-//            if (stack.getType().equals((Object) Material.WRITTEN_BOOK) || stack.getType().equals((Object) Material.BOOK_AND_QUILL)) {
-//                final BookMeta bMeta = (BookMeta) stack.getItemMeta();
-//                if (this.lootConfig.getString("loot." + loot + ".author") != null) {
-//                    String author = this.lootConfig.getString("loot." + loot + ".author");
-//                    author = ChatColor.translateAlternateColorCodes('&', author);
-//                    bMeta.setAuthor(author);
-//                }
-//                if (this.lootConfig.getString("loot." + loot + ".title") != null) {
-//                    String title = this.lootConfig.getString("loot." + loot + ".title");
-//                    title = ChatColor.translateAlternateColorCodes('&', title);
-//                    bMeta.setTitle(title);
-//                }
-//                if (this.lootConfig.getString("loot." + loot + ".pages") != null) {
-//                    for (final String k : this.lootConfig.getConfigurationSection("loot." + loot + ".pages").getKeys(false)) {
-//                        String page = this.lootConfig.getString("loot." + loot + ".pages." + k);
-//                        page = ChatColor.translateAlternateColorCodes('&', page);
-//                        bMeta.addPage(new String[]{page});
-//                    }
-//                }
-//                stack.setItemMeta((ItemMeta) bMeta);
-//            }
-//            if (stack.getType().equals((Object) Material.BANNER)) {
-//                final BannerMeta b = (BannerMeta) stack.getItemMeta();
-//                final List<Pattern> patList = (List<Pattern>) this.lootConfig.getList("loot." + loot + ".patterns");
-//                if (patList != null && !patList.isEmpty()) {
-//                    b.setPatterns((List) patList);
-//                }
-//                stack.setItemMeta((ItemMeta) b);
-//            }
-//            if (stack.getType().equals((Object) Material.SKULL_ITEM) && stack.getDurability() == 3) {
-//                final String owner = this.lootConfig.getString("loot." + loot + ".owner");
-//                final SkullMeta sm = (SkullMeta) stack.getItemMeta();
-//                sm.setOwner(owner);
-//                stack.setItemMeta((ItemMeta) sm);
-//            }
-//            int enchAmount = 0;
-//            for (int e = 0; e <= 10; ++e) {
-//                if (this.lootConfig.getString("loot." + loot + ".enchantments." + e) != null) {
-//                    ++enchAmount;
-//                }
-//            }
-//            if (enchAmount > 0) {
-//                int enMin = enchAmount;
-//                int enMax = enchAmount;
-//                if (this.lootConfig.getString("loot." + loot + ".minEnchantments") != null && this.lootConfig.getString("loot." + loot + ".maxEnchantments") != null) {
-//                    enMin = this.lootConfig.getInt("loot." + loot + ".minEnchantments");
-//                    enMax = this.lootConfig.getInt("loot." + loot + ".maxEnchantments");
-//                }
-//                int enchNeeded = new Random().nextInt(enMax + 1 - enMin) + enMin;
-//                if (enchNeeded > enMax) {
-//                    enchNeeded = enMax;
-//                }
-//                final ArrayList<LevelledEnchantment> enchList = new ArrayList<LevelledEnchantment>();
-//                int safety = 0;
-//                int m = 0;
-//                do {
-//                    if (this.lootConfig.getString("loot." + loot + ".enchantments." + m) != null) {
-//                        int enChance = 1;
-//                        if (this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".chance") != null) {
-//                            enChance = this.lootConfig.getInt("loot." + loot + ".enchantments." + m + ".chance");
-//                        }
-//                        final int chance = new Random().nextInt(enChance - 1 + 1) + 1;
-//                        if (chance == 1) {
-//                            final String enchantment = this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".enchantment");
-//                            final String levelString = this.lootConfig.getString("loot." + loot + ".enchantments." + m + ".level");
-//                            int level = this.getIntFromString(levelString);
-//                            if (Enchantment.getByName(enchantment) == null) {
-//                                System.out.println("Error: No valid drops found!");
-//                                System.out.println("Error: " + enchantment + " is not a valid enchantment!");
-//                                return null;
-//                            }
-//                            if (level < 1) {
-//                                level = 1;
-//                            }
-//                            final LevelledEnchantment le = new LevelledEnchantment(Enchantment.getByName(enchantment), level);
-//                            boolean con = false;
-//                            for (final LevelledEnchantment testE : enchList) {
-//                                if (testE.getEnchantment.equals((Object) le.getEnchantment)) {
-//                                    con = true;
-//                                }
-//                            }
-//                            if (!con) {
-//                                enchList.add(le);
-//                            }
-//                        }
-//                    }
-//                    if (++m > enchAmount) {
-//                        m = 0;
-//                        ++safety;
-//                    }
-//                    if (safety >= enchAmount * 100) {
-//                        System.out.println("Error: No valid drops found!");
-//                        System.out.println("Error: Please increase chance for enchantments on item " + loot);
-//                        return null;
-//                    }
-//                } while (enchList.size() != enchNeeded);
-//                for (final LevelledEnchantment le2 : enchList) {
-//                    if (stack.getType().equals((Object) Material.ENCHANTED_BOOK)) {
-//                        final EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) stack.getItemMeta();
-//                        enchantMeta.addStoredEnchant(le2.getEnchantment, le2.getLevel, true);
-//                        stack.setItemMeta((ItemMeta) enchantMeta);
-//                    } else {
-//                        stack.addUnsafeEnchantment(le2.getEnchantment, le2.getLevel);
-//                    }
-//                }
-//            }
-//            return stack;
-//        } catch (Exception e2) {
-//            this.getLogger().log(Level.SEVERE, e2.getMessage(), true);
-//            e2.printStackTrace();
-//            return null;
-//        }
-//    }
-//
-//    private String prosessLootName(String name, final ItemStack stack) {
-//        name = ChatColor.translateAlternateColorCodes('&', name);
+    private static LootConfig parseOldConfig(File f) {
+        LootConfig cfg = new LootConfig();
+        cfg.dropMap = new HashMap<>();
+        cfg.lootItems = new HashMap<>();
+        YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
+        for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
+            ConfigurationSection s = sec.getConfigurationSection("loot."+itemIdx);
+            LootConfig.LootItem l = getLootFromOldConfig(Integer.parseInt(itemIdx), sec);
+            Integer minLevel = s.getInt("powerMin", 0);
+            Integer maxLevel = s.getInt("powerMax", 24);
+            if (maxLevel<minLevel) {Integer tmp = minLevel; minLevel=maxLevel;maxLevel=tmp;}
+            List<EntityType> e = (s.isList("mobs")?s.getStringList("mobs"):infernal_mobs.instance.getConfig().getStringList("enabledmobs"))
+                    .stream().filter(t->t instanceof String).map(t->EntityType.fromName(t)).collect(Collectors.toList());
+            for (Integer lv = minLevel; lv<=maxLevel;lv++) {
+                for (EntityType t : e) {
+                    cfg.setDropChance(lv, t, itemIdx, 100D);
+                }
+            }
+            cfg.lootItems.put(itemIdx, l);
+        }
+        return cfg;
+    }
+    
+    private static LootConfig.LootItem getLootFromOldConfig(int oldIndex, ConfigurationSection oldCfgRoot) {
+        LootConfig.LootItem i = new LootConfig.LootItem();
+        Map<Enchantment, LootConfig.RangePair> optionalEnchList = new HashMap<>();
+        i.item = getItem(oldIndex, oldCfgRoot, optionalEnchList);
+        ConfigurationSection sec = oldCfgRoot.getConfigurationSection("loot." + oldIndex);
+        if (sec.isString("amount") && sec.getString("amount").contains("-"))
+            i.amountRange = LootConfig.RangePair.parse(sec.getString("amount"));
+        if (sec.isString("durability") && sec.getString("durability").contains("-"))
+            i.damageRange = LootConfig.RangePair.parse(sec.getString("durability"));
+        if (optionalEnchList.size() > 0)
+            i.extraEnchants = optionalEnchList;
+        if (sec.isList("commands"))
+            i.commands = sec.getStringList("commands").stream().filter(s->s instanceof String)
+                    .map(s->s.replace("<player>", "{player}")).collect(Collectors.toList());
+        return i;
+    }
+
+    private static ItemStack getItem(final int lootIdx, ConfigurationSection lootConfig, Map<Enchantment, LootConfig.RangePair> optionalEnchList) {
+        try {
+            final int setItem = lootConfig.getInt("loot." + lootIdx + ".item");
+            final String setAmountString = lootConfig.getString("loot." + lootIdx + ".amount");
+            int setAmount;
+            if (setAmountString != null) {
+                setAmount = getIntFromString(setAmountString);
+            } else {
+                setAmount = 1;
+            }
+            final ItemStack stack = new ItemStack(setItem, setAmount);
+            if (lootConfig.getString("loot." + lootIdx + ".durability") != null) {
+                final String durabilityString = lootConfig.getString("loot." + lootIdx + ".durability");
+                final int durability = getIntFromString(durabilityString);
+                stack.setDurability((short) durability);
+            }
+            String name = null;
+            if (lootConfig.getString("loot." + lootIdx + ".name") != null && lootConfig.isString("loot." + lootIdx + ".name")) {
+                name = lootConfig.getString("loot." + lootIdx + ".name");
+                name = processLoreName(name, stack);
+            } else if (lootConfig.isList("loot." + lootIdx + ".name")) {
+                final ArrayList<String> names = (ArrayList<String>) lootConfig.getList("loot." + lootIdx + ".name");
+                if (names != null) {
+                    //name = names.get(Helper.rand(1, names.size()) - 1);
+                    name = names.get(0);
+                    name = processLoreName(name, stack);
+                }
+            }
+            final ArrayList<String> loreList = new ArrayList<String>();
+            for (int i = 0; i <= 32; ++i) {
+                if (lootConfig.getString("loot." + lootIdx + ".lore" + i) != null) {
+                    String lore = lootConfig.getString("loot." + lootIdx + ".lore" + i);
+                    lore = ChatColor.translateAlternateColorCodes('&', lore);
+                    loreList.add(lore);
+                }
+            }
+            if (lootConfig.getList("loot." + lootIdx + ".lore") != null) {
+                loreList.addAll(lootConfig.getStringList("loot." + lootIdx + ".lore").stream()
+                        .map(s-> processLoreName(s, stack)).collect(Collectors.toList()));
+            }
+            final ItemMeta meta = stack.getItemMeta();
+            if (name != null) {
+                meta.setDisplayName(name);
+            }
+            if (!loreList.isEmpty()) {
+                meta.setLore(loreList);
+            }
+            if (meta != null) {
+                stack.setItemMeta(meta);
+            }
+            if (lootConfig.getString("loot." + lootIdx + ".colour") != null && stack.getType().toString().toLowerCase().contains("leather")) {
+                final String c = lootConfig.getString("loot." + lootIdx + ".colour");
+                final String[] split = c.split(",");
+                final Color colour = Color.fromRGB(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
+                Helper.changeLeatherColor(stack, colour);
+            }
+            if (stack.getType().equals(Material.WRITTEN_BOOK) || stack.getType().equals(Material.BOOK_AND_QUILL)) {
+                final BookMeta bMeta = (BookMeta) stack.getItemMeta();
+                if (lootConfig.getString("loot." + lootIdx + ".author") != null) {
+                    String author = lootConfig.getString("loot." + lootIdx + ".author");
+                    author = ChatColor.translateAlternateColorCodes('&', author);
+                    bMeta.setAuthor(author);
+                }
+                if (lootConfig.getString("loot." + lootIdx + ".title") != null) {
+                    String title = lootConfig.getString("loot." + lootIdx + ".title");
+                    title = ChatColor.translateAlternateColorCodes('&', title);
+                    bMeta.setTitle(title);
+                }
+                if (lootConfig.getString("loot." + lootIdx + ".pages") != null) {
+                    for (final String k : lootConfig.getConfigurationSection("loot." + lootIdx + ".pages").getKeys(false)) {
+                        String page = lootConfig.getString("loot." + lootIdx + ".pages." + k);
+                        page = ChatColor.translateAlternateColorCodes('&', page);
+                        bMeta.addPage(page);
+                    }
+                }
+                stack.setItemMeta(bMeta);
+            }
+            if (stack.getType().equals(Material.BANNER)) {
+                final BannerMeta b = (BannerMeta) stack.getItemMeta();
+                final List<Pattern> patList = (List<Pattern>) lootConfig.getList("loot." + lootIdx + ".patterns");
+                if (patList != null && !patList.isEmpty()) {
+                    b.setPatterns(patList);
+                }
+                stack.setItemMeta(b);
+            }
+            if (stack.getType().equals(Material.SKULL_ITEM) && stack.getDurability() == 3) {
+                final String owner = lootConfig.getString("loot." + lootIdx + ".owner");
+                final SkullMeta sm = (SkullMeta) stack.getItemMeta();
+                sm.setOwner(owner);
+                stack.setItemMeta(sm);
+            }
+
+            if (lootConfig.isConfigurationSection("loot." + lootIdx + ".enchantments")) {
+                for (String key : lootConfig.getConfigurationSection("loot." + lootIdx + ".enchantments").getKeys(false)) {
+                    ConfigurationSection sec = lootConfig.getConfigurationSection("loot." + lootIdx + ".enchantments." + key);
+                    String n = sec.getString("enchantment");
+                    String l = sec.getString("level");
+                    Enchantment e = Enchantment.getByName(n);
+                    if (e == null) {
+                        infernal_mobs.instance.getLogger().warning("invalid ench name: " + n);
+                        continue;
+                    }
+                    if (l.contains("-")) {
+                        LootConfig.RangePair p = LootConfig.RangePair.parse(l);
+                        optionalEnchList.put(e, p);
+                    } else {
+                        Integer level = Integer.parseInt(l);
+                        if (stack.getType().equals(Material.ENCHANTED_BOOK)) {
+                            final EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) stack.getItemMeta();
+                            enchantMeta.addStoredEnchant(e,level, true);
+                            stack.setItemMeta(enchantMeta);
+                        } else {
+                            stack.addUnsafeEnchantment(e, level);
+                        }
+                    }
+                }
+            }
+            return stack;
+        } catch (Exception e2) {
+            infernal_mobs.instance.getLogger().log(Level.SEVERE, e2.getMessage(), true);
+            e2.printStackTrace();
+            return null;
+        }
+    }
+
+    static private String processLoreName(String name, final ItemStack stack) {
+        name = ChatColor.translateAlternateColorCodes('&', name);
 //        String itemName = stack.getType().name();
 //        itemName = itemName.replace("_", " ");
 //        itemName = itemName.toLowerCase();
 //        name = name.replace("<itemName>", itemName);
-//        return name;
-//    }
+        return name;
+    }
+
+    static private int getIntFromString(final String setAmountString) {
+        int setAmount = 1;
+        if (setAmountString.contains("-")) {
+            final String[] split = setAmountString.split("-");
+            try {
+                final Integer minSetAmount = Integer.parseInt(split[0]);
+                final Integer maxSetAmount = Integer.parseInt(split[1]);
+                setAmount = new Random().nextInt(maxSetAmount - minSetAmount + 1) + minSetAmount;
+            } catch (Exception e) {
+                System.out.println("getIntFromString: " + e);
+            }
+        } else {
+            setAmount = Integer.parseInt(setAmountString);
+        }
+        return setAmount;
+    }
 }

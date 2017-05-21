@@ -144,23 +144,6 @@ public class infernal_mobs extends JavaPlugin {
         }, 2L);
     }
 
-    public int getIntFromString(final String setAmountString) {
-        int setAmount = 1;
-        if (setAmountString.contains("-")) {
-            final String[] split = setAmountString.split("-");
-            try {
-                final Integer minSetAmount = Integer.parseInt(split[0]);
-                final Integer maxSetAmount = Integer.parseInt(split[1]);
-                setAmount = new Random().nextInt(maxSetAmount - minSetAmount + 1) + minSetAmount;
-            } catch (Exception e) {
-                System.out.println("getIntFromString: " + e);
-            }
-        } else {
-            setAmount = Integer.parseInt(setAmountString);
-        }
-        return setAmount;
-    }
-
     public boolean isBaby(final Entity mob) {
         if (mob.getType().equals((Object) EntityType.ZOMBIE)) {
             final Zombie zombie = (Zombie) mob;
