@@ -247,8 +247,8 @@ public class LootManager {
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
             ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
             LootConfig.LootItem l = getLootFromOldConfig(Integer.parseInt(itemIdx), sec);
-            Integer minLevel = s.getInt("powerMin", 0);
-            Integer maxLevel = s.getInt("powerMax", 24);
+            Integer minLevel = s.getInt("powersMin", 0);
+            Integer maxLevel = s.getInt("powersMax", 24);
             Double chance = (double)s.getInt("chancePercentage", 100);
             if (maxLevel < minLevel) {
                 Integer tmp = minLevel;
