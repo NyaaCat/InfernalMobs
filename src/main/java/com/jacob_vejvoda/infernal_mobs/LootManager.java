@@ -220,6 +220,10 @@ public class LootManager {
             dropMap.get(level).put(name, chance);
         }
 
+        public void addDropChance(Integer level, String name, Double chance) {
+            if (!dropMap.containsKey(level)) dropMap.put(level, new HashMap<>());
+            dropMap.get(level).put(name, dropMap.get(level).getOrDefault(name, 0D) + chance);
+        }
     }
 
     private final infernal_mobs plugin;
@@ -243,6 +247,7 @@ public class LootManager {
         LootConfig cfg = new LootConfig();
         cfg.dropMap = new HashMap<>();
         cfg.lootItems = new HashMap<>();
+        Map<ItemStack, String> reverseLookupMap = new HashMap<>();
         YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
             ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
@@ -255,10 +260,17 @@ public class LootManager {
                 minLevel = maxLevel;
                 maxLevel = tmp;
             }
-            for (Integer lv = minLevel; lv <= maxLevel; lv++) {
-                cfg.setDropChance(lv, itemIdx, chance);
+            if (!reverseLookupMap.containsKey(l.item)) {
+                for (Integer lv = minLevel; lv <= maxLevel; lv++) {
+                    cfg.setDropChance(lv, itemIdx, chance);
+                }
+                cfg.lootItems.put(itemIdx, l);
+                reverseLookupMap.put(l.item, itemIdx);
+            } else { // duplicated item?
+                for (Integer lv = minLevel; lv <= maxLevel; lv++) {
+                    cfg.addDropChance(lv, reverseLookupMap.get(l.item), chance);
+                }
             }
-            cfg.lootItems.put(itemIdx, l);
         }
         return cfg;
     }
