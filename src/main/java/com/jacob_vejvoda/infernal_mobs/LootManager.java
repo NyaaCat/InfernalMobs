@@ -107,7 +107,7 @@ public class LootManager {
         }
 
         public Map<String, LootItem> lootItems;
-        public Map<Integer, Map<EntityType, Map<String, Double>>> dropMap; // Map<infernalLevel, Map<entityType, Map<dropItemName, dropWeight>>>
+        public Map<Integer, Map<String, Double>> dropMap; // Map<infernalLevel, Map<dropItemName, dropWeight>>
 
         private LootConfig() {
         }
@@ -134,11 +134,7 @@ public class LootManager {
                 infernal_mobs.instance.getLogger().warning("No drop found for Level: " + level);
                 return null;
             }
-            if (!dropMap.get(level).containsKey(entityType)) {
-                infernal_mobs.instance.getLogger().warning("No drop found for entityType: " + entityType.name() + " at level=" + Integer.toString(level));
-                return null;
-            }
-            String name = weightedRandom(dropMap.get(level).get(entityType));
+            String name = weightedRandom(dropMap.get(level));
             if (name == null) {
                 infernal_mobs.instance.getLogger().warning("No drop found for entityType: " + entityType.name() + " at level=" + Integer.toString(level));
                 return null;
@@ -179,15 +175,10 @@ public class LootManager {
                 if (!levelKey.startsWith("level-")) continue;
                 Integer level = Integer.parseInt(levelKey.substring(6));
                 ConfigurationSection levelMap = dropMap.getConfigurationSection(levelKey);
-                Map<EntityType, Map<String, Double>> map = new HashMap<>();
-                for (String entityName : levelMap.getKeys(false)) {
-                    EntityType e = EntityType.valueOf(entityName);
-                    ConfigurationSection entityMap = levelMap.getConfigurationSection(entityName);
-                    Map<String, Double> map2 = new HashMap<>();
-                    for (String dropName : entityMap.getKeys(false)) {
-                        map2.put(dropName, entityMap.getDouble(dropName));
-                    }
-                    map.put(e, map2);
+                Map<String, Double> map = new HashMap<>();
+
+                for (String dropName : levelMap.getKeys(false)) {
+                    map.put(dropName, levelMap.getDouble(dropName));
                 }
                 l.dropMap.put(level, map);
             }
@@ -214,10 +205,7 @@ public class LootManager {
             }
 
             for (Integer level : this.dropMap.keySet()) {
-                ConfigurationSection sec = dropMap.createSection("level-" + level.toString());
-                for (Map.Entry<EntityType, Map<String, Double>> e : this.dropMap.get(level).entrySet()) {
-                    sec.createSection(e.getKey().name(), e.getValue());
-                }
+                dropMap.createSection("level-" + level.toString(), this.dropMap.get(level));
             }
             try {
                 cfg.save(f);
@@ -227,10 +215,9 @@ public class LootManager {
             }
         }
 
-        public void setDropChance(Integer level, EntityType e, String name, Double chance) {
+        public void setDropChance(Integer level, String name, Double chance) {
             if (!dropMap.containsKey(level)) dropMap.put(level, new HashMap<>());
-            if (!dropMap.get(level).containsKey(e)) dropMap.get(level).put(e, new HashMap<>());
-            dropMap.get(level).get(e).put(name, chance);
+            dropMap.get(level).put(name, chance);
         }
 
     }
@@ -257,7 +244,6 @@ public class LootManager {
         cfg.dropMap = new HashMap<>();
         cfg.lootItems = new HashMap<>();
         YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
-        List<EntityType> livingEntityTypes = Stream.of(EntityType.values()).filter(EntityType::isAlive).filter(e->e!=EntityType.PLAYER).collect(Collectors.toList());
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
             ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
             LootConfig.LootItem l = getLootFromOldConfig(Integer.parseInt(itemIdx), sec);
@@ -269,15 +255,8 @@ public class LootManager {
                 minLevel = maxLevel;
                 maxLevel = tmp;
             }
-            List<EntityType> e = s.isList("mobs")?
-                    (s.getStringList("mobs").stream().filter(t -> t instanceof String).map(t -> EntityType.valueOf(t))
-                    .filter(t->t!=null).collect(Collectors.toList()))
-                    :
-                    livingEntityTypes;
             for (Integer lv = minLevel; lv <= maxLevel; lv++) {
-                for (EntityType t : e) {
-                    cfg.setDropChance(lv, t, itemIdx, chance);
-                }
+                cfg.setDropChance(lv, itemIdx, chance);
             }
             cfg.lootItems.put(itemIdx, l);
         }
