@@ -267,6 +267,7 @@ public class LootManager {
                 cfg.lootItems.put(itemIdx, l);
                 reverseLookupMap.put(l.item, itemIdx);
             } else { // duplicated item?
+                infernal_mobs.instance.getLogger().info(String.format("DuplicatedItem: exist=%s dup=%s", reverseLookupMap.get(l.item), itemIdx));
                 for (Integer lv = minLevel; lv <= maxLevel; lv++) {
                     cfg.addDropChance(lv, reverseLookupMap.get(l.item), chance);
                 }
@@ -437,7 +438,7 @@ public class LootManager {
             try {
                 final Integer minSetAmount = Integer.parseInt(split[0]);
                 final Integer maxSetAmount = Integer.parseInt(split[1]);
-                setAmount = new Random().nextInt(maxSetAmount - minSetAmount + 1) + minSetAmount;
+                setAmount = minSetAmount;
             } catch (Exception e) {
                 System.out.println("getIntFromString: " + e);
             }
