@@ -282,7 +282,7 @@ public class CommandHandler implements CommandExecutor {
                     Map<String, Double> m = plugin.lootManager.cfg.dropMap.get(level).get(e);
                     Double sum = m.values().stream().mapToDouble(Double::doubleValue).sum();
                     sender.sendMessage(String.format("Listing drop chance for \"%s\" at level %d", e.name(), level));
-                    m.forEach((k, v) -> sender.sendMessage(String.format("  %s: %.03f%%", k, v / sum * 100D)));
+                    m.forEach((k, v) -> sender.sendMessage(String.format("  %s: %.03f%%", getLootDisplayName(k), v / sum * 100D)));
                 } else if (args.length == 2) {
                     Map2D<LevelTypePair, String, Double> map = new Map2D<>();
                     for (Map.Entry<Integer, Map<EntityType, Map<String, Double>>> e : plugin.lootManager.cfg.dropMap.entrySet()) {
@@ -311,6 +311,19 @@ public class CommandHandler implements CommandExecutor {
             x.printStackTrace();
         }
         return true;
+    }
+
+    private String getLootDisplayName(String k) {
+        if (plugin.lootManager.cfg.lootItems.containsKey(k)) {
+            ItemStack s = plugin.lootManager.cfg.lootItems.get(k).item;
+            if (s != null && s.hasItemMeta() && s.getItemMeta().hasDisplayName()) {
+                return s.getItemMeta().getDisplayName();
+            } else {
+                return k;
+            }
+        } else {
+            return k;
+        }
     }
 
     private <K> Map<K,Double> normalize(Map<K, Double> v) {

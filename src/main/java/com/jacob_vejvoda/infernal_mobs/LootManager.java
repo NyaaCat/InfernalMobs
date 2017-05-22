@@ -17,6 +17,7 @@ import java.io.File;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LootManager {
     public static final Random rnd = new Random();
@@ -253,23 +254,26 @@ public class LootManager {
         cfg.dropMap = new HashMap<>();
         cfg.lootItems = new HashMap<>();
         YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
+        List<EntityType> livingEntityTypes = Stream.of(EntityType.values()).filter(EntityType::isAlive).filter(e->e!=EntityType.PLAYER).collect(Collectors.toList());
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
             ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
             LootConfig.LootItem l = getLootFromOldConfig(Integer.parseInt(itemIdx), sec);
             Integer minLevel = s.getInt("powerMin", 0);
             Integer maxLevel = s.getInt("powerMax", 24);
+            Double chance = (double)s.getInt("chancePercentage", 100);
             if (maxLevel < minLevel) {
                 Integer tmp = minLevel;
                 minLevel = maxLevel;
                 maxLevel = tmp;
             }
-            List<EntityType> e = (s.isList("mobs") ? s.getStringList("mobs") : infernal_mobs.instance.getConfig().getStringList("enabledmobs"))
-                    .stream().filter(t -> t instanceof String).map(t -> EntityType.valueOf(t))
-                    .filter(t->t!=null)
-                    .collect(Collectors.toList());
+            List<EntityType> e = s.isList("mobs")?
+                    (s.getStringList("mobs").stream().filter(t -> t instanceof String).map(t -> EntityType.valueOf(t))
+                    .filter(t->t!=null).collect(Collectors.toList()))
+                    :
+                    livingEntityTypes;
             for (Integer lv = minLevel; lv <= maxLevel; lv++) {
                 for (EntityType t : e) {
-                    cfg.setDropChance(lv, t, itemIdx, 100D);
+                    cfg.setDropChance(lv, t, itemIdx, chance);
                 }
             }
             cfg.lootItems.put(itemIdx, l);
