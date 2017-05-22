@@ -247,7 +247,7 @@ public class LootManager {
         LootConfig cfg = new LootConfig();
         cfg.dropMap = new HashMap<>();
         cfg.lootItems = new HashMap<>();
-        Map<ItemStack, String> reverseLookupMap = new HashMap<>();
+        Map<String, String> itemNameMap = new HashMap<>(); // Map<itemDisplayName, index>
         YamlConfiguration sec = YamlConfiguration.loadConfiguration(f);
         for (String itemIdx : sec.getConfigurationSection("loot").getKeys(false)) {
             ConfigurationSection s = sec.getConfigurationSection("loot." + itemIdx);
@@ -260,15 +260,24 @@ public class LootManager {
                 minLevel = maxLevel;
                 maxLevel = tmp;
             }
-            if (!reverseLookupMap.containsKey(l.item)) {
+            if (!l.item.getItemMeta().hasDisplayName()) { //not dedup on item without name
                 for (Integer lv = minLevel; lv <= maxLevel; lv++) {
                     cfg.setDropChance(lv, itemIdx, chance);
                 }
                 cfg.lootItems.put(itemIdx, l);
-                reverseLookupMap.put(l.item, itemIdx);
-            } else { // duplicated item?
-                for (Integer lv = minLevel; lv <= maxLevel; lv++) {
-                    cfg.addDropChance(lv, reverseLookupMap.get(l.item), chance);
+            } else {
+                String name = ChatColor.stripColor(l.item.getItemMeta().getDisplayName());
+                if (!itemNameMap.containsKey(name)) { // first time see an item
+                    for (Integer lv = minLevel; lv <= maxLevel; lv++) {
+                        cfg.setDropChance(lv, itemIdx, chance);
+                    }
+                    cfg.lootItems.put(itemIdx, l);
+                    itemNameMap.put(name, itemIdx);
+                } else {
+                    String idx = itemNameMap.get(name);
+                    for (Integer lv = minLevel; lv <= maxLevel; lv++) {
+                        cfg.addDropChance(lv, idx, chance);
+                    }
                 }
             }
         }
