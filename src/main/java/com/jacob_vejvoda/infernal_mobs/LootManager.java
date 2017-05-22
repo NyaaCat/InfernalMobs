@@ -12,6 +12,9 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import java.io.File;
 import java.util.*;
@@ -388,6 +391,14 @@ public class LootManager {
                 final SkullMeta sm = (SkullMeta) stack.getItemMeta();
                 sm.setOwner(owner);
                 stack.setItemMeta(sm);
+            }
+
+            if ((lootConfig.getString("loot." + lootIdx + ".potion") != null) &&
+                    ((stack.getType().equals(Material.POTION)) || (stack.getType().equals(Material.SPLASH_POTION)) || (stack.getType().equals(Material.LINGERING_POTION)))) {
+                PotionMeta pMeta = (PotionMeta) stack.getItemMeta();
+                String pn = lootConfig.getString("loot." + lootIdx + ".potion");
+                pMeta.setBasePotionData(new PotionData(PotionType.getByEffect(PotionEffectType.getByName(pn)), false, false));
+                stack.setItemMeta(pMeta);
             }
 
             if (lootConfig.isConfigurationSection("loot." + lootIdx + ".enchantments")) {
