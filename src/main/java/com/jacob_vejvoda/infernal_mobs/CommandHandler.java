@@ -280,14 +280,15 @@ public class CommandHandler implements CommandExecutor {
                     Map<String, Double> m = plugin.lootManager.cfg.dropMap.get(level);
                     Double sum = m.values().stream().mapToDouble(Double::doubleValue).sum();
                     sender.sendMessage(String.format("Listing drop chance for level %d", level));
-                    m.forEach((k, v) -> sender.sendMessage(String.format("  %s: %.03f%%", getLootDisplayName(k), v / sum * 100D)));
+                    m.entrySet().stream().sorted((a,b)->a.getValue().compareTo(b.getValue()))
+                            .forEach(e -> sender.sendMessage(String.format("  %3.03f%% %s", e.getValue() / sum * 100D, getLootDisplayName(e.getKey()))));
                 } else if (args.length == 3 && "item".equals(args[1])) {
                     Map2D<Integer, String, Double> map = new Map2D<>();
                     for (Map.Entry<Integer, Map<String, Double>> e : plugin.lootManager.cfg.dropMap.entrySet()) {
                         map.setRow(e.getKey(), normalize(e.getValue()));
                     }
                     sender.sendMessage(String.format("Listing drop chance for item \"%s\"", args[1]));
-                    Map<Integer, Double> m = map.getColumn(args[1]);
+                    Map<Integer, Double> m = map.getColumn(args[2]);
                     if (m.size() == 0) {
                         sender.sendMessage("Item never dropped");
                     } else {
