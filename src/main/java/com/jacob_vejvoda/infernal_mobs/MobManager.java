@@ -6,7 +6,6 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -37,157 +36,77 @@ public class MobManager {
         return mob;
     }
 
+    public boolean isAcceptableBaby(Entity e) {
+        String typeName = e.getType().name();
+        if (e instanceof Zombie && ((Zombie) e).isBaby()) {
+            if (plugin.getConfig().getStringList("disabledBabyMobs").contains(typeName)) return false;
+        }
+        if (e instanceof Ageable && !((Ageable) e).isAdult()) {
+            if (plugin.getConfig().getStringList("disabledBabyMobs").contains(typeName)) return false;
+        }
+        return true;
+    }
+
     /**
      * Change the given entity into infernal mob
      *
      * @param e     the entity
-     * @param fixed
+     * @param fixed do not spawn by chance, also bypass baby restriction
      */
     public void makeInfernal(final Entity e, final boolean fixed) {
-        final boolean mobEnabled = true;
-        String entName = e.getType().name();
-        if (!e.hasMetadata("NPC") && !e.hasMetadata("shopkeeper")) {
-            if (!fixed) {
-                final ArrayList<String> babyList = (ArrayList<String>) plugin.getConfig().getList("disabledBabyMobs");
-                if (e.getType().equals((Object) EntityType.MUSHROOM_COW)) {
-                    final MushroomCow minion = (MushroomCow) e;
-                    if (!minion.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.COW)) {
-                    final Cow minion2 = (Cow) e;
-                    if (!minion2.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.SHEEP)) {
-                    final Sheep minion3 = (Sheep) e;
-                    if (!minion3.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.PIG)) {
-                    final Pig minion4 = (Pig) e;
-                    if (!minion4.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.CHICKEN)) {
-                    final Chicken minion5 = (Chicken) e;
-                    if (!minion5.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.WOLF)) {
-                    final Wolf minion6 = (Wolf) e;
-                    if (!minion6.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.ZOMBIE)) {
-                    final Zombie minion7 = (Zombie) e;
-                    if (!minion7.isBaby() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.PIG_ZOMBIE)) {
-                    final PigZombie minion8 = (PigZombie) e;
-                    if (!minion8.isBaby() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.OCELOT)) {
-                    final Ocelot minion9 = (Ocelot) e;
-                    if (!minion9.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.HORSE)) {
-                    final Horse minion10 = (Horse) e;
-                    if (!minion10.isAdult() || babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.VILLAGER)) {
-                    final Villager minion11 = (Villager) e;
-                    if (!minion11.isAdult() && babyList.contains(entName)) {
-                        return;
-                    }
-                } else if (e.getType().equals((Object) EntityType.RABBIT)) {
-                    final Rabbit minion12 = (Rabbit) e;
-                    if (!minion12.isAdult() && babyList.contains(entName)) {
-                        return;
+        if (e.hasMetadata("NPC") || e.hasMetadata("shopkeeper")) return;
+        if (!fixed && !isAcceptableBaby(e)) return;
+        final UUID id = e.getUniqueId();
+        if (!fixed) {
+            if (Helper.rand(0, 100) > plugin.getConfig().getInt("chance")) return;
+        }
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (e.isDead() || !e.isValid()) return;
+                final ArrayList<String> aList = plugin.getAbilitiesAmount(e);
+                Mob newMob = new Mob(e, id, e.getWorld(), true, aList, aList.contains("1up") ? 2 : 1, plugin.getEffect());
+                if (aList.contains("flying")) {
+                    plugin.mobManager.makeFly(e);
+                }
+                mobMap.put(id, newMob);
+                plugin.gui.setName(e);
+                plugin.mobManager.giveMobGear(e, true);
+                plugin.addHealth(newMob);
+                if (plugin.getConfig().getBoolean("enableSpawnMessages")) {
+                    if (plugin.getConfig().getList("spawnMessages") != null) {
+                        final ArrayList<String> spawnMessageList = (ArrayList<String>) plugin.getConfig().getList("spawnMessages");
+                        final Random randomGenerator = new Random();
+                        final int index = randomGenerator.nextInt(spawnMessageList.size());
+                        String spawnMessage = spawnMessageList.get(index);
+                        spawnMessage = ChatColor.translateAlternateColorCodes('&', spawnMessage);
+                        if (((LivingEntity) e).getCustomName() != null) {
+                            spawnMessage = spawnMessage.replace("mob", ((LivingEntity) e).getCustomName());
+                        } else {
+                            spawnMessage = spawnMessage.replace("mob", e.getType().toString().toLowerCase());
+                        }
+                        final int r = plugin.getConfig().getInt("spawnMessageRadius");
+                        if (r == -1) {
+                            for (final Player p : e.getWorld().getPlayers()) {
+                                p.sendMessage(spawnMessage);
+                            }
+                        } else if (r == -2) {
+                            Bukkit.broadcastMessage(spawnMessage);
+                        } else {
+                            for (final Entity e : e.getNearbyEntities((double) r, (double) r, (double) r)) {
+                                if (e instanceof Player) {
+                                    final Player p2 = (Player) e;
+                                    p2.sendMessage(spawnMessage);
+                                }
+                            }
+                        }
+                    } else {
+                        System.out.println("No valid spawn messages found!");
                     }
                 }
             }
-            final UUID id = e.getUniqueId();
-            final int chance = plugin.getConfig().getInt("chance");
-            final boolean mobEnabled2 = mobEnabled;
-            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask((Plugin) plugin, (Runnable) new Runnable() {
-                @Override
-                public void run() {
-                    String entName = e.getType().name();
-                    if (!e.isDead() && e.isValid() && ((plugin.getConfig().getList("enabledmobs").contains(entName) && mobEnabled2) ||
-                            (fixed))) {
-                        final int min = 1;
-                        int max = chance;
-                        final int mc = plugin.getConfig().getInt("mobChances." + entName);
-                        if (mc > 0) {
-                            max = mc;
-                        }
-                        if (fixed) {
-                            max = 1;
-                        }
-                        final int randomNum = Helper.rand(min, max);
-                        if (randomNum == 1) {
-                            final ArrayList<String> aList = plugin.getAbilitiesAmount(e);
-                            if (plugin.getConfig().getString("levelChance." + aList.size()) != null) {
-                                final int sc = plugin.getConfig().getInt("levelChance." + aList.size());
-                                final int randomNum2 = new Random().nextInt(sc - min + 1) + min;
-                                if (randomNum2 != 1) {
-                                    return;
-                                }
-                            }
-                            Mob newMob = null;
-                            if (aList.contains("1up")) {
-                                newMob = new Mob(e, id, e.getWorld(), true, aList, 2, plugin.getEffect());
-                            } else {
-                                newMob = new Mob(e, id, e.getWorld(), true, aList, 1, plugin.getEffect());
-                            }
-                            if (aList.contains("flying")) {
-                                plugin.mobManager.makeFly(e);
-                            }
-                            mobMap.put(id, newMob);
-                            plugin.gui.setName(e);
-                            plugin.mobManager.giveMobGear(e, true);
-                            plugin.addHealth(newMob);
-                            if (plugin.getConfig().getBoolean("enableSpawnMessages")) {
-                                if (plugin.getConfig().getList("spawnMessages") != null) {
-                                    final ArrayList<String> spawnMessageList = (ArrayList<String>) plugin.getConfig().getList("spawnMessages");
-                                    final Random randomGenerator = new Random();
-                                    final int index = randomGenerator.nextInt(spawnMessageList.size());
-                                    String spawnMessage = spawnMessageList.get(index);
-                                    spawnMessage = ChatColor.translateAlternateColorCodes('&', spawnMessage);
-                                    if (((LivingEntity) e).getCustomName() != null) {
-                                        spawnMessage = spawnMessage.replace("mob", ((LivingEntity) e).getCustomName());
-                                    } else {
-                                        spawnMessage = spawnMessage.replace("mob", e.getType().toString().toLowerCase());
-                                    }
-                                    final int r = plugin.getConfig().getInt("spawnMessageRadius");
-                                    if (r == -1) {
-                                        for (final Player p : e.getWorld().getPlayers()) {
-                                            p.sendMessage(spawnMessage);
-                                        }
-                                    } else if (r == -2) {
-                                        Bukkit.broadcastMessage(spawnMessage);
-                                    } else {
-                                        for (final Entity e : e.getNearbyEntities((double) r, (double) r, (double) r)) {
-                                            if (e instanceof Player) {
-                                                final Player p2 = (Player) e;
-                                                p2.sendMessage(spawnMessage);
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    System.out.println("No valid spawn messages found!");
-                                }
-                            }
-                        }
-                    }
-                }
-            }, 10L);
-        }
+        }, 10L);
+
     }
 
     public void giveMobGear(final Entity mob, final boolean naturalSpawn) {
