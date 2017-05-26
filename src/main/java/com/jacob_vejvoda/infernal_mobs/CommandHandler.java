@@ -264,7 +264,7 @@ public class CommandHandler implements CommandExecutor {
                     sender.sendMessage("Add fail. Please check if you are holding the item");
                 }
             } else if (args[0].equals("setdrop")) {
-                if (args.length != 5) {
+                if (args.length != 4) {
                     sender.sendMessage("Available mob types:");
                     for (EntityType e : EntityType.values()) sender.sendMessage("  " + e.name());
                 } else {
