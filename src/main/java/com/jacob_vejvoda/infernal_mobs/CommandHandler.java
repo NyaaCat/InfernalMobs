@@ -273,6 +273,7 @@ public class CommandHandler implements CommandExecutor {
                     Double w = Double.parseDouble(args[3]);
                     plugin.lootManager.cfg.setDropChance(level, name, w);
                     plugin.lootManager.save();
+                    sender.sendMessage("Chance set.");
                 }
             } else if (args[0].equals("checkchance")) {
                 if (args.length == 3 && "level".equals(args[1])) {

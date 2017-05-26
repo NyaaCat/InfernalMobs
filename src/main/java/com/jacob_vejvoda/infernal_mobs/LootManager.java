@@ -216,8 +216,17 @@ public class LootManager {
         }
 
         public void setDropChance(Integer level, String name, Double chance) {
-            if (!dropMap.containsKey(level)) dropMap.put(level, new HashMap<>());
-            dropMap.get(level).put(name, chance);
+            if (chance <= 0) {
+                if (dropMap.containsKey(level) && dropMap.get(level).containsKey(name)) {
+                    dropMap.get(level).remove(name);
+                    if (dropMap.get(level).size() <= 0) {
+                        dropMap.remove(level);
+                    }
+                }
+            } else {
+                if (!dropMap.containsKey(level)) dropMap.put(level, new HashMap<>());
+                dropMap.get(level).put(name, chance);
+            }
         }
 
         public void addDropChance(Integer level, String name, Double chance) {
