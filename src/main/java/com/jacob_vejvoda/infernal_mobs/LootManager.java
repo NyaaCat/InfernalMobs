@@ -73,23 +73,23 @@ public class LootManager {
                 if (damageRange != null) {
                     short damageR = (short) damageRange.get();
                     if (damageR < 0) damageR = 0;
-                    if (damageR >= item.getType().getMaxDurability())
-                        damageR = (short) (item.getType().getMaxDurability() - 1);
-                    item.setDurability(damageR);
+                    if (damageR >= ret.getType().getMaxDurability())
+                        damageR = (short) (ret.getType().getMaxDurability() - 1);
+                    ret.setDurability(damageR);
                 }
                 if (amountRange != null) {
-                    item.setAmount(amountRange.get());
+                    ret.setAmount(amountRange.get());
                 }
                 if (extraEnchants != null) {
-                    if (item.getType() == Material.ENCHANTED_BOOK) {
-                        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+                    if (ret.getType() == Material.ENCHANTED_BOOK) {
+                        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) ret.getItemMeta();
                         for (Enchantment e : extraEnchants.keySet()) {
                             meta.addStoredEnchant(e, extraEnchants.get(e).get(), true);
                         }
-                        item.setItemMeta(meta);
+                        ret.setItemMeta(meta);
                     } else {
                         for (Enchantment e : extraEnchants.keySet()) {
-                            item.addUnsafeEnchantment(e, extraEnchants.get(e).get());
+                            ret.addUnsafeEnchantment(e, extraEnchants.get(e).get());
                         }
                     }
                 }
