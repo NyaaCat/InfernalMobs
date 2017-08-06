@@ -643,8 +643,10 @@ public class infernal_mobs extends JavaPlugin {
                         if (ability.equals("webber") && this.isLegitVictim(atc, playerIsVictom, ability)) {
                             if (randomNum >= 8 || randomNum == 1) {
                                 final Location feet = vic.getLocation();
-                                feet.getBlock().setType(Material.WEB);
-                                this.setAir(feet, 60);
+                                if (feet.getBlock().getType().equals(Material.AIR)) {
+                                    feet.getBlock().setType(Material.WEB);
+                                    this.setAir(feet, 60);
+                                }
                                 final int rNum = new Random().nextInt(max - min + 1) + min;
                                 if (rNum == 5 && (atc.getType().equals((Object) EntityType.SPIDER) || atc.getType().equals((Object) EntityType.CAVE_SPIDER))) {
                                     final Location k = atc.getLocation();
