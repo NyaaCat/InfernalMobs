@@ -1,5 +1,11 @@
 apply plugin: 'java'
 
+// Version strings used for CI
+// Note the spaces before and after the equals sign
+ext.majorVersion = 5
+ext.minorVersion = 1
+ext.minecraftVersion = "1.12"
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -26,7 +32,7 @@ archivesBaseName = 'InfernalMobs'
 
 dependencies {
     compile 'org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT'
-    compile('cat.nyaa:nyaacore:3.0-SNAPSHOT') {
+    compile('cat.nyaa:nyaacore:4.1-SNAPSHOT') {
         transitive = false
     }
 }

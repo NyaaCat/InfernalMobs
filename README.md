@@ -8,3 +8,6 @@ Tuned to meet our needs.
 - Migrated to Spigot
 - BossBarAPI \& BarAPI integration removed
 - Wizardly Magic integration removed
+- Depends on NyaaCore 4.1
+
+[![Build Status](https://travis-ci.org/NyaaCat/InfernalMobs.svg?branch=master)](https://travis-ci.org/NyaaCat/InfernalMobs)
