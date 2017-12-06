@@ -1,319 +1,297 @@
 package com.jacob_vejvoda.infernal_mobs;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
+import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.*;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 import java.util.*;
-
+import java.util.concurrent.TimeUnit;
 
 public class MobManager {
     public final Map<UUID, Mob> mobMap = new HashMap<>();
-    private final infernal_mobs plugin;
+    public final Set<UUID> mounteeMobs = new HashSet<>();
+    private final InfernalMobs plugin;
 
-    public MobManager(infernal_mobs plugin) {
+    // Map<childId, parentId>
+    public final Cache<UUID, UUID> mamaSpawned = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+
+    public MobManager(InfernalMobs plugin) {
         this.plugin = plugin;
     }
 
-    public Mob spawnMob(EntityType type, Location loc, ArrayList<String> abilities) {
+    /** spwan an infernal mob from nowhere */
+    public Mob spawnMob(EntityType type, Location loc, List<EnumAbilities> abilities, InfernalSpawnReason reason) {
+        return spawnMob(type, loc, abilities, null, reason);
+    }
+
+    public Mob spawnMob(EntityType type, Location loc, List<EnumAbilities> abilities, UUID parentId, InfernalSpawnReason reason) {
+
+        if (!type.isAlive()) throw new IllegalArgumentException(type.name() + " is not a living entity");
         Entity spawnedEntity = loc.getWorld().spawnEntity(loc, type);
         UUID id = spawnedEntity.getUniqueId();
-        int living = abilities.contains("1up") ? 2 : 1;
-        Mob mob = new Mob(spawnedEntity, id, loc.getWorld(), true, abilities, living, plugin.getEffect());
-        if (abilities.contains("flying")) {
-            plugin.mobManager.makeFly(spawnedEntity);
-        }
+        int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
+        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
+
+        InfernalMobSpawnEvent spwanEvent = new InfernalMobSpawnEvent((LivingEntity) spawnedEntity, mob, parentId, reason);
+        for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
+
+        setInfernalHealth(spwanEvent);
+        setInfernalMobName(spwanEvent);
+
+        // TODO event
+
         mobMap.put(id, mob);
-        plugin.gui.setName(spawnedEntity);
-        plugin.mobManager.giveMobGear(spawnedEntity, false);
-        plugin.addHealth(mob);
         return mob;
     }
 
-    public boolean isAcceptableBaby(Entity e) {
-        String typeName = e.getType().name();
-        if (e instanceof Zombie && ((Zombie) e).isBaby()) {
-            if (plugin.getConfig().getStringList("disabledBabyMobs").contains(typeName)) return false;
+    /**
+     * Set the max health point for newly created infernal mobs, depending on their level.
+     */
+    public static void setInfernalHealth(InfernalMobSpawnEvent ev) {
+        LivingEntity ent = ev.mobEntity;
+        double baseHealth = ent.getHealth();
+        double newHealth;
+
+        if (ConfigReader.isHealthByPower()) {
+            newHealth = baseHealth * ev.mob.getMobLevel();
+        } else if (ConfigReader.isHealthByDistance()) {
+            double mobDistance = ent.getWorld().getSpawnLocation().distance(ent.getLocation());
+            double distanceLevel = mobDistance / ConfigReader.getDistancePerHealthLevel();
+            newHealth = distanceLevel * ConfigReader.getHealthPerHealthLevel();
+        } else {
+            newHealth = baseHealth * ConfigReader.getHealthMultiplier();
         }
-        if (e instanceof Ageable && !((Ageable) e).isAdult()) {
-            if (plugin.getConfig().getStringList("disabledBabyMobs").contains(typeName)) return false;
+
+        if (newHealth > baseHealth) {
+            long tmp = Math.round(newHealth);
+            ent.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(tmp);
+            ent.setHealth(tmp);
         }
-        return true;
+    }
+
+    /** Give infernal mobs names when they are spawned */
+    public static void setInfernalMobName(InfernalMobSpawnEvent ev) {
+        LivingEntity e = ev.mobEntity;
+        if (ConfigReader.isInfernalMobHasNameTag()) {
+            String nameTag = getMobNameTag(e.getType(), ev.mob.abilityList);
+            e.setCustomName(nameTag);
+            if (ConfigReader.isInfernalMobNameTagAlwaysVisible())
+                e.setCustomNameVisible(true);
+        }
+    }
+
+    /** Infernal Mob's name. Based on entity type and level */
+    public static String getMobNameTag(EntityType type, List<EnumAbilities> abilities) {
+        String tag = ConfigReader.getMobNameTag();
+        tag = tag.replace("<mobName>", type.name())
+                .replace("<mobLevel>", Integer.toString(abilities.size()))
+                .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32))
+                .replace("<prefix>", ConfigReader.getNameTagPrefix(abilities.size()));
+        tag = ChatColor.translateAlternateColorCodes('&', tag);
+        return tag;
+    }
+
+    /** "mama thief ..." */
+    public static String getHumanReadableAbilityString(List<EnumAbilities> abilities, int maxAbility, int maxLength) {
+        if (abilities.size() <= 0) return "";
+        maxLength -= 3;
+        int count = 0;
+        int len = 0;
+        for (EnumAbilities ab : abilities) {
+            len += ab.name().length() + 1;
+            count += 1;
+            if (len > maxLength) break;
+        }
+        if (len > maxLength) count --;
+        String ret = abilities.get(0).name().toLowerCase();
+        for (int i=1;i<count;i++) {
+            ret += " " + abilities.get(i).name().toLowerCase();
+        }
+        if (count < abilities.size()) ret += " ...";
+        return ret;
     }
 
     /**
      * Change the given entity into infernal mob
+     * TODO may need to be called delayed
      *
-     * @param e     the entity
-     * @param fixed do not spawn by chance, also bypass baby restriction
+     * @param mobEntity     the entity
      */
-    public void makeInfernal(final Entity e, final boolean fixed) {
-        if (e.hasMetadata("NPC") || e.hasMetadata("shopkeeper")) return;
-        if (!fixed && !isAcceptableBaby(e)) return;
-        final UUID id = e.getUniqueId();
-        if (!fixed) {
-            if (Helper.rand(0, 100) > plugin.getConfig().getInt("chance")) return;
-        }
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (e.isDead() || !e.isValid()) return;
-                final ArrayList<String> aList = plugin.getAbilitiesAmount(e);
-                Mob newMob = new Mob(e, id, e.getWorld(), true, aList, aList.contains("1up") ? 2 : 1, plugin.getEffect());
-                if (aList.contains("flying")) {
-                    plugin.mobManager.makeFly(e);
-                }
-                mobMap.put(id, newMob);
-                plugin.gui.setName(e);
-                plugin.mobManager.giveMobGear(e, true);
-                plugin.addHealth(newMob);
-                if (plugin.getConfig().getBoolean("enableSpawnMessages")) {
-                    if (plugin.getConfig().getList("spawnMessages") != null) {
-                        final ArrayList<String> spawnMessageList = (ArrayList<String>) plugin.getConfig().getList("spawnMessages");
-                        final Random randomGenerator = new Random();
-                        final int index = randomGenerator.nextInt(spawnMessageList.size());
-                        String spawnMessage = spawnMessageList.get(index);
-                        spawnMessage = ChatColor.translateAlternateColorCodes('&', spawnMessage);
-                        if (((LivingEntity) e).getCustomName() != null) {
-                            spawnMessage = spawnMessage.replace("mob", ((LivingEntity) e).getCustomName());
-                        } else {
-                            spawnMessage = spawnMessage.replace("mob", e.getType().toString().toLowerCase());
-                        }
-                        final int r = plugin.getConfig().getInt("spawnMessageRadius");
-                        if (r == -1) {
-                            for (final Player p : e.getWorld().getPlayers()) {
-                                p.sendMessage(spawnMessage);
-                            }
-                        } else if (r == -2) {
-                            Bukkit.broadcastMessage(spawnMessage);
-                        } else {
-                            for (final Entity e : e.getNearbyEntities((double) r, (double) r, (double) r)) {
-                                if (e instanceof Player) {
-                                    final Player p2 = (Player) e;
-                                    p2.sendMessage(spawnMessage);
-                                }
-                            }
-                        }
-                    } else {
-                        System.out.println("No valid spawn messages found!");
-                    }
-                }
-            }
-        }, 10L);
+    public void infernalNaturalSpawn(LivingEntity mobEntity) {
+        if (mobEntity.isDead() || !mobEntity.isValid()) return;
+        if (mobEntity.hasMetadata("NPC") || mobEntity.hasMetadata("shopkeeper")) return;
+        if (!isAcceptableBaby(mobEntity)) return;
+        final UUID id = mobEntity.getUniqueId();
+        if (!Helper.possibility(ConfigReader.getInfernalNaturalSpawningPercentage())) return;
 
-    }
+        List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
+        if (abilities == null || abilities.size() <= 0)return;
 
-    public void giveMobGear(final Entity mob, final boolean naturalSpawn) {
-        final UUID mobId = mob.getUniqueId();
-        if (!mobMap.containsKey(mobId)) return;
-        ArrayList<String> mobAbilityList = mobMap.get(mobId).abilityList;
-        boolean armoured = false;
-        if (mobAbilityList.contains("armoured")) {
-            armoured = true;
-            ((LivingEntity) mob).setCanPickupItems(false);
+        // setup infernal mob
+        int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
+        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
+
+        InfernalMobSpawnEvent spwanEvent;
+        if (mamaSpawned.getIfPresent(id) != null) {
+            spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, mamaSpawned.getIfPresent(id), InfernalSpawnReason.MAMA);
+        } else {
+            spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, null, InfernalSpawnReason.NATURAL);
         }
-        final ItemStack helm = new ItemStack(Material.DIAMOND_HELMET, 1);
-        final ItemStack chest = new ItemStack(Material.DIAMOND_CHESTPLATE, 1);
-        final ItemStack pants = new ItemStack(Material.DIAMOND_LEGGINGS, 1);
-        final ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS, 1);
-        final ItemStack sword = new ItemStack(Material.DIAMOND_SWORD, 1);
-        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 4);
-        final EntityEquipment ee = ((LivingEntity) mob).getEquipment();
-        if (mob instanceof Skeleton) {
-            final Skeleton sk = (Skeleton) mob;
-            if (sk.getSkeletonType().equals((Object) Skeleton.SkeletonType.WITHER)) {
-                if (armoured) {
-                    ee.setHelmetDropChance(0.0f);
-                    ee.setChestplateDropChance(0.0f);
-                    ee.setLeggingsDropChance(0.0f);
-                    ee.setBootsDropChance(0.0f);
-                    ee.setItemInHandDropChance(0.0f);
-                    ee.setHelmet(helm);
-                    ee.setChestplate(chest);
-                    ee.setLeggings(pants);
-                    ee.setBoots(boots);
-                    ee.setItemInHand(sword);
+        for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
+
+        setInfernalHealth(spwanEvent);
+        setInfernalMobName(spwanEvent);
+
+        mobMap.put(id, mob);
+        // TODO event
+
+        // Show message
+        if (ConfigReader.isSpwanMessageEnabled()) {
+            String msg = Helper.randomItem(ConfigReader.getSpwanMessages());
+            msg = msg.replace("{mob}", mobEntity.getCustomName() == null ? mobEntity.getType().name().toLowerCase() : mobEntity.getCustomName());
+            msg = ChatColor.translateAlternateColorCodes('&', msg);
+            if (ConfigReader.isBroadcastSpawnMessageServer()) {
+                Bukkit.broadcastMessage(msg);
+            } else if (ConfigReader.isBroadcastSpawnMessageWorld()) {
+                for (Player p : mobEntity.getWorld().getPlayers()) {
+                    p.sendMessage(msg);
                 }
             } else {
-                final ItemStack bow = new ItemStack(Material.BOW, 1);
-                ee.setItemInHand(bow);
-                if (armoured) {
-                    ee.setHelmetDropChance(0.0f);
-                    ee.setChestplateDropChance(0.0f);
-                    ee.setHelmet(helm);
-                    ee.setChestplate(chest);
-                    if (!mobAbilityList.contains("cloaked")) {
-                        ee.setLeggingsDropChance(0.0f);
-                        ee.setBootsDropChance(0.0f);
-                        ee.setLeggings(pants);
-                        ee.setBoots(boots);
+                int r = ConfigReader.getSpawnMessageBroadcaseRadius();
+                for (Entity e : mobEntity.getNearbyEntities(r, r, r)) {
+                    if (e instanceof Player) {
+                        e.sendMessage(msg);
                     }
-                    ee.setItemInHandDropChance(0.0f);
-                    ee.setItemInHand(sword);
-                } else if (mobAbilityList.contains("cloaked")) {
-                    final ItemStack skull = new ItemStack(Material.GLASS_BOTTLE, 1);
-                    ee.setHelmet(skull);
                 }
-            }
-        } else if (mob instanceof Zombie || mob instanceof PigZombie) {
-            if (armoured) {
-                ee.setHelmetDropChance(0.0f);
-                ee.setChestplateDropChance(0.0f);
-                ee.setHelmet(helm);
-                ee.setChestplate(chest);
-                if (!mobAbilityList.contains("cloaked")) {
-                    ee.setLeggings(pants);
-                    ee.setBoots(boots);
-                }
-                ee.setLeggingsDropChance(0.0f);
-                ee.setBootsDropChance(0.0f);
-                ee.setItemInHandDropChance(0.0f);
-                ee.setItemInHand(sword);
-            } else if (mob instanceof Zombie && mobAbilityList.contains("cloaked")) {
-                final ItemStack skull2 = new ItemStack(Material.GLASS_BOTTLE, 1, (short) 2);
-                ee.setHelmet(skull2);
             }
         }
-        if ((mobAbilityList.contains("mounted") && plugin.getConfig().getList("enabledRiders").contains(mob.getType().getName())) || (!naturalSpawn && mobAbilityList.contains("mounted"))) {
-            ArrayList<String> mounts = new ArrayList<String>();
-            mounts = (ArrayList<String>) plugin.getConfig().getList("enabledMounts");
-            final Random randomGenerator = new Random();
-            final int index = randomGenerator.nextInt(mounts.size());
-            String mount = mounts.get(index);
-            String type = null;
-            if (mount.contains(":")) {
-                final String[] s = mount.split(":");
-                mount = s[0];
-                type = s[1];
-            }
-            if (EntityType.fromName(mount) != null) {
-                final Entity liveMount = mob.getWorld().spawnEntity(mob.getLocation(), EntityType.fromName(mount));
-                plugin.mountList.put(liveMount, mob);
-                liveMount.setPassenger(mob);
-                if (liveMount.getType().equals((Object) EntityType.HORSE)) {
-                    final Horse hm = (Horse) liveMount;
-                    if (type != null) {
-                        hm.setVariant(Horse.Variant.valueOf(type));
-                    } else {
-                        final int randomNum2 = Helper.rand(1, 7);
-                        if (randomNum2 <= 3) {
-                            hm.setVariant(Horse.Variant.HORSE);
-                        } else if (randomNum2 == 4) {
-                            hm.setVariant(Horse.Variant.DONKEY);
-                        } else if (randomNum2 == 5) {
-                            hm.setVariant(Horse.Variant.MULE);
-                        } else if (randomNum2 == 6) {
-                            hm.setVariant(Horse.Variant.SKELETON_HORSE);
-                        } else {
-                            hm.setVariant(Horse.Variant.UNDEAD_HORSE);
-                        }
-                    }
-                    if (plugin.getConfig().getBoolean("horseMountsHaveSaddles")) {
-                        final ItemStack saddle = new ItemStack(Material.SADDLE);
-                        hm.getInventory().setSaddle(saddle);
-                    }
-                    hm.setTamed(true);
-                    if (hm.getVariant().equals((Object) Horse.Variant.HORSE)) {
-                        final int randomNum3 = Helper.rand(1, 7);
-                        if (randomNum3 == 1) {
-                            hm.setColor(Horse.Color.BLACK);
-                        } else if (randomNum3 == 2) {
-                            hm.setColor(Horse.Color.BROWN);
-                        } else if (randomNum3 == 3) {
-                            hm.setColor(Horse.Color.CHESTNUT);
-                        } else if (randomNum3 == 4) {
-                            hm.setColor(Horse.Color.CREAMY);
-                        } else if (randomNum3 == 5) {
-                            hm.setColor(Horse.Color.DARK_BROWN);
-                        } else if (randomNum3 == 6) {
-                            hm.setColor(Horse.Color.GRAY);
-                        } else {
-                            hm.setColor(Horse.Color.WHITE);
-                        }
-                        if (armoured && plugin.getConfig().getBoolean("armouredMountsHaveArmour")) {
-                            final ItemStack armour = new ItemStack(419);
-                            hm.getInventory().setArmor(armour);
-                        }
-                    }
-                } else if (liveMount.getType().equals((Object) EntityType.SHEEP)) {
-                    final Sheep sh = (Sheep) liveMount;
-                    if (type != null) {
-                        sh.setColor(DyeColor.valueOf(type));
-                    }
-                }
-            } else {
-                System.out.println("Can't spawn mount!");
-                System.out.println(String.valueOf(mount) + " is not a valid Entity!");
-            }
-        }
-    }
 
-    public void makeFly(final Entity ent) {
-        final Entity bat = ent.getWorld().spawnEntity(ent.getLocation(), EntityType.BAT);
-        bat.setVelocity(new Vector(0, 1, 0));
-        bat.setPassenger(ent);
-        ((LivingEntity) bat).addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 1), true);
     }
 
     /**
-     * Spawn a ghost infernalMob
+     * Returns false only when the Entity is a baby AND is disabled in config
      */
-    public void spawnGhost(final Location l) {
-        boolean evil = false;
-        if (new Random().nextInt(3) == 1) {
-            evil = true;
-        }
-        final Zombie g = (Zombie) l.getWorld().spawnEntity(l, EntityType.ZOMBIE);
-        g.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 199999980, 1));
-        g.setCanPickupItems(false);
-        final ItemStack chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
-        ItemStack skull;
-        if (evil) {
-            skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 1);
-            Helper.changeLeatherColor(chest, Color.BLACK);
-        } else {
-            skull = new ItemStack(Material.SKULL_ITEM, 1);
-            Helper.changeLeatherColor(chest, Color.WHITE);
-        }
-        chest.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, new Random().nextInt(10) + 1);
-        final ItemMeta m = skull.getItemMeta();
-        m.setDisplayName("§fGhost Head");
-        skull.setItemMeta(m);
-        g.getEquipment().setHelmet(skull);
-        g.getEquipment().setChestplate(chest);
-        g.getEquipment().setHelmetDropChance(0.0f);
-        g.getEquipment().setChestplateDropChance(0.0f);
-        final int min = 1;
-        final int max = 5;
-        final int rn = new Random().nextInt(max - min + 1) + min;
-        if (rn == 1) {
-            g.getEquipment().setItemInHand(new ItemStack(Material.STONE_HOE, 1));
-            g.getEquipment().setItemInHandDropChance(0.0f);
-        }
-        plugin.ghostMove((Entity) g);
-        final ArrayList<String> aList = new ArrayList<String>();
-        aList.add("ender");
-        if (evil) {
-            aList.add("necromancer");
-            aList.add("withering");
-            aList.add("blinding");
-        } else {
-            aList.add("ghastly");
-            aList.add("sapper");
-            aList.add("confusing");
-        }
-        Mob newMob;
-        if (evil) {
-            newMob = new Mob((Entity) g, g.getUniqueId(), g.getWorld(), false, aList, 1, "smoke:2:12");
-        } else {
-            newMob = new Mob((Entity) g, g.getUniqueId(), g.getWorld(), false, aList, 1, "cloud:0:8");
-        }
-        mobMap.put(newMob.id, newMob);
+    public static boolean isAcceptableBaby(Entity e) {
+        if (!ConfigReader.getDisabledBabyNameList().contains(e.getType())) return true;
+        if (e instanceof Zombie && ((Zombie) e).isBaby()) return false;
+        if (e instanceof Ageable && !((Ageable) e).isAdult()) return false;
+        return true;
     }
+
+    public static int getInfernalLevelForLocation(Location loc) {
+        int level;
+        if (ConfigReader.isSpawnedLevelByDistance()) {
+            Location spLoc = loc.getWorld().getSpawnLocation();
+            double dist = (loc.getX() - spLoc.getX()) * (loc.getX() - spLoc.getX());
+            dist += (loc.getZ() - spLoc.getZ()) * (loc.getZ() - spLoc.getZ());
+            dist = Math.sqrt(dist);
+            level = (int)Math.ceil(dist / ConfigReader.getSpawnDistancePerLevel());
+        } else {
+            level = Helper.rand(ConfigReader.getMinimalLevel(), ConfigReader.getMaximumLevel());
+        }
+        if (level <= 0) level = 1;
+        return level;
+    }
+
+    // preserve health and lives
+    public LivingEntity morphInfernalMob(LivingEntity mobEntity, Mob mob) {
+        EntityType type = Helper.randomItem(ConfigReader.getEnabledEntityTypes());
+        Location loc = mobEntity.getLocation();
+        Entity spawnedEntity = loc.getWorld().spawnEntity(loc, type);
+        UUID id = spawnedEntity.getUniqueId();
+        mob.entityId = id;
+
+        InfernalMobSpawnEvent spwanEvent = new InfernalMobSpawnEvent((LivingEntity) spawnedEntity, mob, mobEntity.getUniqueId(), InfernalSpawnReason.MORPH);
+        for (EnumAbilities ability : mob.abilityList) ability.onMobSpawn(spwanEvent);
+
+        ((LivingEntity) spawnedEntity).getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(mobEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+        ((LivingEntity) spawnedEntity).setHealth(mobEntity.getHealth());
+        setInfernalMobName(spwanEvent);
+
+        // TODO event
+        mobMap.put(id, mob);
+        mobMap.remove(mobEntity.getUniqueId());
+        mobEntity.remove();
+        return (LivingEntity) spawnedEntity;
+    }
+
+
+
+    /*
+     * TODO Spawn a ghost infernalMob
+     */
+//    public void spawnGhost(final Location l) {
+//        boolean evil = false;
+//        if (new Random().nextInt(3) == 1) {
+//            evil = true;
+//        }
+//        final Zombie g = (Zombie) l.getWorld().spawnEntity(l, EntityType.ZOMBIE);
+//        g.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 199999980, 1));
+//        g.setCanPickupItems(false);
+//        final ItemStack chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
+//        ItemStack skull;
+//        if (evil) {
+//            skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 1);
+//            Helper.changeLeatherColor(chest, Color.BLACK);
+//        } else {
+//            skull = new ItemStack(Material.SKULL_ITEM, 1);
+//            Helper.changeLeatherColor(chest, Color.WHITE);
+//        }
+//        chest.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, new Random().nextInt(10) + 1);
+//        final ItemMeta m = skull.getItemMeta();
+//        m.setDisplayName("§fGhost Head");
+//        skull.setItemMeta(m);
+//        g.getEquipment().setHelmet(skull);
+//        g.getEquipment().setChestplate(chest);
+//        g.getEquipment().setHelmetDropChance(0.0f);
+//        g.getEquipment().setChestplateDropChance(0.0f);
+//        final int min = 1;
+//        final int max = 5;
+//        final int rn = new Random().nextInt(max - min + 1) + min;
+//        if (rn == 1) {
+//            g.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_HOE, 1));
+//            g.getEquipment().setItemInMainHandDropChance(0.0f);
+//        }
+//
+//        // Ghost Mobs have special moving pattern
+//        new BukkitRunnable() {
+//            private boolean cancelled = false;
+//            @Override
+//            public void run() {
+//                if (cancelled) return;
+//                if (g.isDead()) {
+//                    cancelled = true;
+//                    this.cancel();
+//                    return;
+//                }
+//                final Vector v = g.getLocation().getDirection().multiply(0.3);
+//                g.setVelocity(v);
+//            }
+//        }.runTaskTimer(infernal_mobs.instance, 2L, 2L);
+//
+//        final ArrayList<EnumAbilities> aList = new ArrayList<>();
+//        aList.add(EnumAbilities.ENDER);
+//        if (evil) {
+//            aList.add(EnumAbilities.NECROMANCER);
+//            aList.add(EnumAbilities.WITHERING);
+//            aList.add(EnumAbilities.BLINDING);
+//        } else {
+//            aList.add(EnumAbilities.GHASTLY);
+//            aList.add(EnumAbilities.SAPPER);
+//            aList.add(EnumAbilities.CONFUSING);
+//        }
+//        Mob newMob;
+//        if (evil) {
+//            newMob = new Mob( g, g.getUniqueId(), g.getWorld(), aList, 1, new ParticleEffect(Particle.SMOKE_NORMAL, 2, 12));
+//        } else {
+//            newMob = new Mob( g, g.getUniqueId(), g.getWorld(), aList, 1, new ParticleEffect(Particle.CLOUD, 0, 8));
+//        }
+//        mobMap.put(newMob.entityId, newMob);
+//    }
 }

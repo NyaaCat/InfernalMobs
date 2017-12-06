@@ -1,37 +1,41 @@
-package com.jacob_vejvoda.infernal_mobs;
+package com.jacob_vejvoda.infernal_mobs.persist;
 
+import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
+import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+/**
+ * Store runtime data such as:
+ * - Spawned infernal mobs
+ * - Location of infernal mob spawners
+ * so they survive server reboots
+ */
 public class PersistStorage {
-    private final infernal_mobs plugin;
-    private final File presistFile;
+    private final InfernalMobs plugin;
+    private final File persistFile;
 
-    // Map<SpawnerLocation, SpawnInterval>
-    public final Map<Location, Integer> validInfernalSpawners = new HashMap<>();
+    public final Map<Location, Integer> validInfernalSpawners = new HashMap<>(); // Map<SpawnerLocation, SpawnInterval>
 
-    public PersistStorage(infernal_mobs plugin, File f) {
+    public PersistStorage(InfernalMobs plugin, File f) {
         this.plugin = plugin;
-        this.presistFile = f;
+        this.persistFile = f;
     }
 
     public void loadToMemory() {
-        if (!presistFile.exists()) {
+        if (!persistFile.exists()) {
             try {
-                presistFile.createNewFile();
+                persistFile.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(presistFile);
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(persistFile);
         if (cfg.isConfigurationSection("spawners")) {
             ConfigurationSection sec = cfg.getConfigurationSection("spawners");
             for (String key : sec.getKeys(false)) {
@@ -41,17 +45,20 @@ public class PersistStorage {
         if (cfg.isConfigurationSection("mobs")) {
             ConfigurationSection sec = cfg.getConfigurationSection("mobs");
             for (String key : sec.getKeys(false)) {
-                Mob m = new Mob();
-                m.id = UUID.fromString(sec.getString(key + ".uuid"));
-                m.world = plugin.getServer().getWorld(sec.getString(key + ".world_name"));
-                m.infernal = sec.getBoolean(key + ".infernal");
-                m.lives = sec.getInt(key + ".lives");
-                m.effect = sec.getString(key + ".effect");
-                m.abilityList = new ArrayList<>();
-                m.abilityList.addAll(sec.getStringList(key + ".abilities"));
-                m.entity = plugin.getServer().getEntity(m.id);
-                if (m.entity != null) {
-                    plugin.mobManager.mobMap.put(m.id, m);
+                List<EnumAbilities> abilities = new ArrayList<>();
+                for (String str : sec.getStringList(key + ".abilities")) {
+                    try {
+                        abilities.add(EnumAbilities.valueOf(str));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                Mob m = new Mob(UUID.fromString(sec.getString(key + ".uuid")),
+                        sec.getInt(key + ".lives"),
+                        ParticleEffect.parse(sec.getString(key + ".effect")),
+                        abilities);
+                if (plugin.getServer().getEntity(m.entityId) != null) {
+                    plugin.mobManager.mobMap.put(m.entityId, m);
                 }
             }
         }
@@ -73,15 +80,16 @@ public class PersistStorage {
             ConfigurationSection sec = root.createSection("mobs." + Integer.toString(idx));
             Mob m = plugin.mobManager.mobMap.get(id);
             sec.set("uuid", id.toString());
-            sec.set("world_name", m.world.getName());
-            sec.set("infernal", m.infernal);
             sec.set("lives", m.lives);
-            sec.set("effect", m.effect);
-            sec.set("abilities", m.abilityList);
+
+            List<String> abilities = new ArrayList<>();
+            for (EnumAbilities a : m.abilityList) abilities.add(a.name());
+            sec.set("abilities", abilities);
+            sec.set("effect", m.particleEffect.toString());
             idx++;
         }
         try {
-            root.save(presistFile);
+            root.save(persistFile);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

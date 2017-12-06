@@ -1,8 +1,10 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import cat.nyaa.nyaacore.Message;
+import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.*;
-import org.bukkit.block.Block;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,16 +17,15 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
-import java.util.logging.Level;
 
 public class EventListener implements Listener {
-    private final infernal_mobs plugin;
-    private Map<Location, Long> spawnerLastSpawnTime;
+    private final InfernalMobs plugin;
 
-    public EventListener(final infernal_mobs instance) {
-        this.spawnerLastSpawnTime = new HashMap<>();
+    public EventListener(final InfernalMobs instance) {
         this.plugin = instance;
     }
 
@@ -32,27 +33,31 @@ public class EventListener implements Listener {
     public void onPlayerInteractEntity(final PlayerInteractEntityEvent e) {
         final Player p = e.getPlayer();
         final Entity ent = e.getRightClicked();
+        if (p == null || !(ent instanceof LivingEntity)) return;
         if (this.plugin.errorList.contains(p)) {
             this.plugin.errorList.remove(p);
             p.sendMessage("§6Error report:");
-            String name = "";
-            try {
-                name = ent.getCustomName();
-            } catch (Exception ex) {
-            }
+            String name = ent.getCustomName();
+            if (name == null) name = ent.getType().name();
             p.sendMessage("§eName: §f" + name);
-            p.sendMessage("§eHealth: §f" + ((Damageable) ent).getMaxHealth());
-            p.sendMessage("§eInfernal: §s" + this.plugin.mobManager.mobMap.containsKey(ent.getUniqueId()));
+            p.sendMessage(String.format("§eHealth: §f %.2f/%.2f", ((LivingEntity) ent).getHealth(), ((LivingEntity) ent).getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()));
+            Mob m = this.plugin.mobManager.mobMap.get(ent.getUniqueId());
+            if (m == null) {
+                p.sendMessage("§eInfernal: §sfalse");
+            } else {
+                p.sendMessage("§eInfernal Abilities: §s" + m.abilityList);
+                p.sendMessage("§eInfernal Lives: §s" + m.lives);
+            }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onEnitityDamaged(final EntityDamageEvent e) {
+    public void onEntityDamaged(final EntityDamageEvent e) {
         final Entity mob = e.getEntity();
         if (this.plugin.mobManager.mobMap.containsKey(mob.getUniqueId())) {
             for (final Entity entity : mob.getNearbyEntities(64.0, 64.0, 64.0)) {
                 if (entity instanceof Player) {
-                    GUI.fixBar((Player) entity);
+                    GUI.refreshPlayerScoreboard((Player)entity);
                 }
             }
         }
@@ -69,88 +74,59 @@ public class EventListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onEntityAttack(final EntityDamageByEntityEvent event) throws Exception {
-        try {
-            final Entity attacker = event.getDamager();
-            final Entity victim = event.getEntity();
-            if (attacker instanceof Arrow) {
-                final Arrow arrow = (Arrow) event.getDamager();
-                if (arrow.getShooter() instanceof Player && !(victim instanceof Player)) {
-                    final Entity mob = victim;
-                    final Player player = (Player) arrow.getShooter();
-                    this.plugin.doEffect(player, mob, false);
-                } else if (!(arrow.getShooter() instanceof Player) && victim instanceof Player) {
-                    final Entity mob = (Entity) arrow.getShooter();
-                    final Player player = (Player) victim;
-                    this.plugin.doEffect(player, mob, true);
-                }
-            } else if (attacker instanceof Snowball) {
-                final Snowball snowBall = (Snowball) event.getDamager();
-                if (snowBall.getShooter() != null) {
-                    if (snowBall.getShooter() instanceof Player && !(victim instanceof Player)) {
-                        final Entity mob = victim;
-                        final Player player = (Player) snowBall.getShooter();
-                        this.plugin.doEffect(player, mob, false);
-                    } else if (!(snowBall.getShooter() instanceof Player) && victim instanceof Player) {
-                        final Entity mob = (Entity) snowBall.getShooter();
-                        final Player player = (Player) victim;
-                        this.plugin.doEffect(player, mob, true);
-                    }
-                }
-            } else if (attacker instanceof Player && !(victim instanceof Player)) {
-                final Player player2 = (Player) attacker;
-                final Entity mob = victim;
-                this.plugin.doEffect(player2, mob, false);
-            } else if (!(attacker instanceof Player) && victim instanceof Player) {
-                final Player player2 = (Player) victim;
-                final Entity mob = attacker;
-                this.plugin.doEffect(player2, mob, true);
+    public void onEntityAttack(final EntityDamageByEntityEvent event) {
+        boolean isDirectAttack = true;
+        Entity trueVictim = event.getEntity();
+        Entity trueAttacker = event.getDamager();
+        if (trueAttacker instanceof Projectile) {
+            isDirectAttack = false;
+            ProjectileSource src = ((Projectile) trueAttacker).getShooter();
+            if (src instanceof Entity) {
+                trueAttacker = (Entity) src;
+            } else {
+                return;
             }
-            if (this.plugin.mobManager.mobMap.containsKey(victim.getUniqueId())) {
-                for (final Entity entity : victim.getNearbyEntities(64.0, 64.0, 64.0)) {
-                    if (entity instanceof Player) {
-                        GUI.fixBar((Player) entity);
-                    }
-                }
+        }
+        if (!(trueAttacker instanceof LivingEntity)) return;
+        if (!(trueVictim instanceof LivingEntity)) return;
+
+        if (plugin.mobManager.mobMap.containsKey(trueVictim.getUniqueId())) {
+            // something attacked infernal mob
+            if (!(trueAttacker instanceof Player)) return;
+            if (((Player) trueAttacker).getGameMode() == GameMode.CREATIVE) return;
+            Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
+            for (EnumAbilities ab : mob.abilityList) {
+                ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
             }
-        } catch (Exception e) {
-            this.plugin.getLogger().log(Level.SEVERE, e.getMessage());
-            e.printStackTrace();
+        }
+
+        if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
+            // infernal mob attacked something
+            if (!(trueVictim instanceof Player)) return;
+            if (((Player) trueVictim).getGameMode() == GameMode.CREATIVE) return;
+            Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
+            for (EnumAbilities ab : mob.abilityList) {
+                ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+            }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onMobSpawn(final CreatureSpawnEvent event) {
-        Entity e = event.getEntity();
-        if (e.hasMetadata("NPC") || e.hasMetadata("shopkeeper") || e.getCustomName() != null) {
-            return;
-        }
-
-        if (event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER)) {
-            Block spawner = Helper.blockNear(event.getEntity().getLocation(), Material.MOB_SPAWNER, 10);
-            if (spawner == null) return;
-            Location spawnerLocation = spawner.getLocation();
-            if (!plugin.persist.validInfernalSpawners.containsKey(spawnerLocation)) return;
-            long startTime = this.spawnerLastSpawnTime.get(spawnerLocation);
-            long endTime = System.currentTimeMillis();
-            final long timePassed = endTime - startTime;
-            final int delay = plugin.persist.validInfernalSpawners.get(spawnerLocation);
-            if (timePassed >= delay) {
-                plugin.mobManager.makeInfernal(e, true);
-                this.spawnerLastSpawnTime.put(spawnerLocation, endTime);
-            } else {
-                event.setCancelled(true);
+        LivingEntity e = event.getEntity();
+        if (e.hasMetadata("NPC")) return;
+        if (e.hasMetadata("shopkeeper")) return;
+        if (e.getCustomName() != null) return;
+        if (!ConfigReader.isEnabledWorld(e.getWorld())) return;
+        if (!ConfigReader.isEnabledMobType(e.getType())) return;
+        if (e.getLocation().getY() < ConfigReader.getNaturalSpawnMinHeight()) return;
+        if (!ConfigReader.getEnabledSpawnReasons().contains(event.getSpawnReason())) return;
+        new BukkitRunnable(){
+            @Override
+            public void run() {
+                plugin.mobManager.infernalNaturalSpawn(e);
             }
-        } else {
-            World world = e.getWorld();
-            String typeName = e.getType().name();
-            if ((this.plugin.getConfig().getList("enabledworlds").contains(world.getName()) || this.plugin.getConfig().getList("enabledworlds").contains("<all>")) &&
-                    this.plugin.getConfig().getList("enabledmobs").contains(typeName) &&
-                    this.plugin.getConfig().getInt("naturalSpawnHeight") < e.getLocation().getY() &&
-                    this.plugin.getConfig().getList("enabledSpawnReasons").contains(event.getSpawnReason().toString())) {
-                plugin.mobManager.makeInfernal(e, false);
-            }
-        }
+        }.runTaskLater(plugin, 10L);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -166,135 +142,121 @@ public class EventListener implements Listener {
         }
     }
 
+    private static boolean determineShouldDrop(boolean killedByPlayer, boolean isCreativePlayer) {
+        if (!ConfigReader.isDropEnabled()) return false;
+        if (killedByPlayer) {
+            return isCreativePlayer ? ConfigReader.isCreativeDropEnabled() : true;
+        } else {
+            return ConfigReader.isFarmingDropEnabled();
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(final EntityDeathEvent event) {
-        try {
-            final UUID id = event.getEntity().getUniqueId();
-            Mob m = plugin.mobManager.mobMap.get(id);
-            if (m == null) return;
-            final List<String> aList = m.abilityList;
-            if (aList.contains("explode")) {
-                Location loc = event.getEntity().getLocation();
-                loc.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), 4, false, false);
-            }
-            boolean isGhost = false;
-            try {
-                if (event.getEntity().getEquipment().getHelmet().getItemMeta().getDisplayName().equals("§fGhost Head")) {
-                    isGhost = true;
-                }
-            } catch (Exception ex) {
-            }
-            if (aList.contains("ghost")) {
-                this.plugin.mobManager.spawnGhost(event.getEntity().getLocation());
-            }
+        UUID id = event.getEntity().getUniqueId();
+        Mob mob = plugin.mobManager.mobMap.get(id);
+        if (mob == null) return;
+        LivingEntity mobEntity = event.getEntity();
 
-            // item drop decision
-            ItemStack selectedDropItem = null;
-            if (this.plugin.getConfig().getBoolean("enableDrops") && (this.plugin.getConfig().getBoolean("enableFarmingDrops") || event.getEntity().getKiller() != null) && (this.plugin.getConfig().getBoolean("enableFarmingDrops") || event.getEntity().getKiller() instanceof Player)) {
-                Player player = null;
-                if (event.getEntity().getKiller() instanceof Player) {
-                    player = event.getEntity().getKiller();
-                }
-                if (player != null && player.getGameMode().equals((Object) GameMode.CREATIVE) && this.plugin.getConfig().getBoolean("noCreativeDrops")) {
-
-                } else {
-                    final ItemStack drop = this.plugin.lootManager.getRandomLoot(player, event.getEntity().getType().name(), aList.size());
-                    if (drop != null) {
-                        final int min = 1;
-                        final int max = this.plugin.getConfig().getInt("dropChance");
-                        final int randomNum = new Random().nextInt(max - min + 1) + min;
-                        if (randomNum == 1) {
-                            event.getDrops().add(drop);
-                            selectedDropItem = drop;
-                        }
-                        final int xpm = this.plugin.getConfig().getInt("xpMultiplier");
-                        final int xp = event.getDroppedExp() * xpm;
-                        event.setDroppedExp(xp);
-                    }
-                }
-            }
-            try {
-                this.plugin.removeMob(id);
-            } catch (Exception e) {
-                System.out.println("Error: " + e);
-            }
-
-            // print death message
-            if (this.plugin.getConfig().getBoolean("enableDeathMessages") && event.getEntity().getKiller() != null && !isGhost) {
-                Player player = event.getEntity().getKiller();
-                String playerName = player.getName();
-                String mobName;
-                if (event.getEntity().getCustomName() != null) {
-                    mobName = event.getEntity().getCustomName();
-                } else {
-                    mobName = event.getEntity().getType().name();
-                }
-                boolean broadcastToAllWorld = this.plugin.getConfig().getBoolean("broadcastToAllWorld");
-
-                if (this.plugin.getConfig().getList("deathMessages") != null) {
-                    String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
-                    deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
-                    deathMessage = deathMessage.replace("{player}", playerName);
-                    deathMessage = deathMessage.replace("{mob}", mobName);
-                    ItemStack item = player.getInventory().getItemInMainHand();
-                    if (item != null && !item.getType().equals(Material.AIR)) {
-                        if (broadcastToAllWorld) {
-                            new Message("")
-                                    .append(deathMessage, item)
-                                    .broadcast();
-                        } else {
-                            new Message("")
-                                    .append(deathMessage, item)
-                                    .broadcast(player.getLocation().getWorld());
-                        }
-                    } else {
-                        if (broadcastToAllWorld) {
-                            new Message(
-                                    deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                            ).broadcast();
-                        } else {
-                            new Message(
-                                    deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                            ).broadcast(player.getLocation().getWorld());
-                        }
-                    }
-                } else {
-                    System.out.println("No valid death messages found!");
-                }
-
-                if (plugin.getConfig().isList("dropMessages") && selectedDropItem != null) {
-                    String msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
-                    msg = ChatColor.translateAlternateColorCodes('&', msg);
-                    msg = msg.replace("{player}", playerName);
-                    msg = msg.replace("{mob}", mobName);
-                    if (broadcastToAllWorld) {
-                        new Message("")
-                                .append(msg, selectedDropItem)
-                                .broadcast();
-                    } else {
-                        new Message("")
-                                .append(msg, selectedDropItem)
-                                .broadcast(player.getLocation().getWorld());
-                    }
-                }
-
-                if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
-                    String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
-                    msg = ChatColor.translateAlternateColorCodes('&', msg);
-                    msg = msg.replace("{player}", playerName);
-                    msg = msg.replace("{mob}", mobName);
-                    if (broadcastToAllWorld) {
-                        new Message(msg)
-                                .broadcast();
-                    } else {
-                        new Message(msg)
-                                .broadcast(player.getLocation().getWorld());
-                    }
-                }
-            }
-        } catch (Exception e2) {
-            e2.printStackTrace();
-            System.out.println("EntityDeathEvent: " + e2);
+        for (EnumAbilities ab : mob.abilityList) {
+            ab.onDeath(mobEntity, mob, mobEntity.getKiller(), event);
         }
+
+        // item drop decision
+        ItemStack selectedDropItem = null;
+        Player killer = mobEntity.getKiller();
+        if (determineShouldDrop(killer != null, (killer!=null) && (killer.getGameMode()==GameMode.CREATIVE))) {
+            ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
+            if (drop != null) {
+                final int min = 1;
+                final int max = ConfigReader.getDropChance();
+                final int randomNum = new Random().nextInt(max - min + 1) + min;
+                if (randomNum == 1) {
+                    event.getDrops().add(drop);
+                    selectedDropItem = drop;
+                }
+            }
+        }
+
+        // set xp drop
+        final int xpm = ConfigReader.getXpMultiplier();
+        final int xp = event.getDroppedExp() * xpm;
+        event.setDroppedExp(xp);
+
+        // broadcast death message TODO use ConfigReader
+        if (this.plugin.getConfig().getBoolean("enableDeathMessages") && event.getEntity().getKiller() != null) {
+            Player player = event.getEntity().getKiller();
+            String playerName = player.getName();
+            String mobName;
+            if (event.getEntity().getCustomName() != null) {
+                mobName = event.getEntity().getCustomName();
+            } else {
+                mobName = event.getEntity().getType().name();
+            }
+            boolean broadcastToAllWorld = this.plugin.getConfig().getBoolean("broadcastToAllWorld");
+
+            if (this.plugin.getConfig().getList("deathMessages") != null) {
+                String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
+                deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
+                deathMessage = deathMessage.replace("{player}", playerName);
+                deathMessage = deathMessage.replace("{mob}", mobName);
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item != null && !item.getType().equals(Material.AIR)) {
+                    if (broadcastToAllWorld) {
+                        new Message("")
+                                .append(deathMessage, item)
+                                .broadcast();
+                    } else {
+                        new Message("")
+                                .append(deathMessage, item)
+                                .broadcast(player.getLocation().getWorld());
+                    }
+                } else {
+                    if (broadcastToAllWorld) {
+                        new Message(
+                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
+                        ).broadcast();
+                    } else {
+                        new Message(
+                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
+                        ).broadcast(player.getLocation().getWorld());
+                    }
+                }
+            } else {
+                System.out.println("No valid death messages found!");
+            }
+
+            if (plugin.getConfig().isList("dropMessages") && selectedDropItem != null) {
+                String msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
+                msg = ChatColor.translateAlternateColorCodes('&', msg);
+                msg = msg.replace("{player}", playerName);
+                msg = msg.replace("{mob}", mobName);
+                if (broadcastToAllWorld) {
+                    new Message("")
+                            .append(msg, selectedDropItem)
+                            .broadcast();
+                } else {
+                    new Message("")
+                            .append(msg, selectedDropItem)
+                            .broadcast(player.getLocation().getWorld());
+                }
+            }
+
+            if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
+                String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
+                msg = ChatColor.translateAlternateColorCodes('&', msg);
+                msg = msg.replace("{player}", playerName);
+                msg = msg.replace("{mob}", mobName);
+                if (broadcastToAllWorld) {
+                    new Message(msg)
+                            .broadcast();
+                } else {
+                    new Message(msg)
+                            .broadcast(player.getLocation().getWorld());
+                }
+            }
+        }
+
+        plugin.mobManager.mobMap.remove(id);
     }
 }

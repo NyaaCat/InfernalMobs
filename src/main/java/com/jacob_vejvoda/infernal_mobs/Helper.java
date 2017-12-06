@@ -1,17 +1,19 @@
 package com.jacob_vejvoda.infernal_mobs;
 
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.util.BlockIterator;
+import org.bukkit.util.Vector;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class Helper {
+    public static final Random rnd = new Random(System.currentTimeMillis());
+
     public static List<Block> getSphere(final Block block1, final int radius) {
         final List<Block> blocks = new LinkedList<Block>();
         final double xi = block1.getLocation().getX() + 0.5;
@@ -58,9 +60,13 @@ public class Helper {
         return blocks;
     }
 
+    // generate random int between min and max (both inclusive)
     public static int rand(final int min, final int max) {
-        final int r = min + (int) (Math.random() * (1 + max - min));
-        return r;
+        return rnd.nextInt(max - min + 1) + min;
+    }
+
+    public static double rand(double min, double max) {
+        return rnd.nextDouble() * (max-min) + min;
     }
 
     public static Block blockNear(final Location l, final Material mat, final int radius) {
@@ -85,9 +91,18 @@ public class Helper {
     }
 
     public static <T> T randomItem(List<T> list) {
+        if (list == null || list.size() <= 0) return null;
         final Random randomGenerator = new Random();
         final int index = randomGenerator.nextInt(list.size());
         return list.get(index);
+    }
+
+    public static <T> List<T> randomNItems(List<T> list, int n) {
+        if (list == null) return null;
+        if (list.size() <= n) return new ArrayList<>(list);
+        List<T> copy = new ArrayList<>(list);
+        Collections.shuffle(copy);
+        return new ArrayList<T>(copy.subList(0, n));
     }
 
     public static void changeLeatherColor(final ItemStack item, final Color color) {
@@ -97,5 +112,19 @@ public class Helper {
             item.setItemMeta(meta);
         } catch (Exception ex) {
         }
+    }
+
+    // x in [0,1], return true with possibility of x
+    public static boolean possibility(double x) {
+        if (x <= 0) return false;
+        if (x >= 1) return true;
+        return rnd.nextDouble() < x;
+    }
+
+    public static double getVectorAngle(Vector v1, Vector v2) {
+        double dot = v1.dot(v2);
+        double normalProduct = v1.length() * v2.length();
+        double cos = dot/normalProduct;
+        return Math.acos(cos);
     }
 }
