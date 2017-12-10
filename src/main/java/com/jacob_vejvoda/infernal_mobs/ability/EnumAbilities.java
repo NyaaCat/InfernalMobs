@@ -1,6 +1,12 @@
 package com.jacob_vejvoda.infernal_mobs.ability;
 
 import com.jacob_vejvoda.infernal_mobs.ability.*;
+import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 
 public enum EnumAbilities implements IAbility {
     MAMA("mama", AbilityMama.class),
@@ -50,5 +56,29 @@ public enum EnumAbilities implements IAbility {
         instance = t;
     }
 
-    // TODO create stub methods, dispatching to instance
+
+    @Override
+    public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
+        instance.perCycleEffect(mobEntity, mob);
+    }
+
+    @Override
+    public void onMobSpawn(InfernalMobSpawnEvent ev) {
+        instance.onMobSpawn(ev);
+    }
+
+    @Override
+    public void onDeath(LivingEntity mobEntity, Mob mob, Player killer, EntityDeathEvent ev) {
+        instance.onDeath(mobEntity, mob, killer, ev);
+    }
+
+    @Override
+    public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
+        instance.onPlayerAttack(mobEntity, mob, attacker, isDirectAttack, ev);
+    }
+
+    @Override
+    public void onAttackPlayer(LivingEntity mobEntity, Mob mob, Player victim, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
+        instance.onAttackPlayer(mobEntity, mob, victim, isDirectAttack, ev);
+    }
 }

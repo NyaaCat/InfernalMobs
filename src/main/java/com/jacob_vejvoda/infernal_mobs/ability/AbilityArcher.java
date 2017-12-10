@@ -15,18 +15,18 @@ import java.util.List;
 public class AbilityArcher implements IAbility {
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
-        if (Helper.possibility(0.7)) return;
+        if (Helper.possibility(0.8)) return;
         List<Player> candidates = new ArrayList<>();
         for (Entity e : mobEntity.getNearbyEntities(16, 16,16)) {
             if (!(e instanceof Player)) continue;
             Player p = (Player) e;
             if (p.getGameMode() == GameMode.CREATIVE) return;
-            if (!mobEntity.hasLineOfSight(p)) candidates.add(p);
+            if (mobEntity.hasLineOfSight(p)) candidates.add(p);
         }
         Player victim = Helper.randomItem(candidates);
         if (victim == null) return;
-        Vector v = victim.getEyeLocation().toVector().subtract(mobEntity.getEyeLocation().toVector());
-        for (int i = 0;i<3;i++) {
+        Vector v = victim.getEyeLocation().toVector().subtract(mobEntity.getEyeLocation().toVector()).normalize();
+        for (int i = 0;i<1;i++) {
             mobEntity.launchProjectile(Arrow.class, v);
         }
 

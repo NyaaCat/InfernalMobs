@@ -12,6 +12,7 @@ public class AbilityEnder implements IAbility {
     public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (mobEntity.isInsideVehicle()) return;
         if (!isDirectAttack) {
+            if (Helper.possibility(0.5)) return;
             mobEntity.teleport(attacker.getLocation());
         } else if (Helper.possibility(0.2)) {
             double x = mobEntity.getLocation().getX() + Helper.rand(-5D, 5D);
@@ -23,7 +24,7 @@ public class AbilityEnder implements IAbility {
 
     @Override
     public void onAttackPlayer(LivingEntity mobEntity, Mob mob, Player victim, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
-        if (mobEntity.isInsideVehicle()) return;
+        if (mobEntity.isInsideVehicle() || Helper.possibility(0.5)) return;
         if (!isDirectAttack) mobEntity.teleport(victim.getLocation());
     }
 }

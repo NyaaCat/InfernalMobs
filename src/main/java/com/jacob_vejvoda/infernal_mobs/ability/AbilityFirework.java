@@ -19,15 +19,16 @@ public class AbilityFirework implements IAbility {
     @Override
     public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (!isDirectAttack) {
-            mobEntity.getWorld().spawn(mobEntity.getEyeLocation(), Firework.class, AbilityFirework::setupFirework);
+            Firework fw = mobEntity.getWorld().spawn(mobEntity.getEyeLocation(), Firework.class, AbilityFirework::setupFirework);
+            fw.detonate();
         }
     }
 
     public static void setupFirework(Firework fw) {
         FireworkMeta meta = fw.getFireworkMeta();
         meta.addEffect(FireworkEffect.builder().withColor(ConfigReader.getFireworkColor()).with(FireworkEffect.Type.BALL_LARGE).build());
-        meta.setPower(1);
+        meta.setPower(0);
         fw.setFireworkMeta(meta);
-        fw.setVelocity(new Vector(0,1,0));
+        fw.setVelocity(new Vector(0,0,0));
     }
 }

@@ -6,6 +6,7 @@ import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Spider;
@@ -20,10 +21,10 @@ public class AbilityWebber implements IAbility {
         if (mobEntity instanceof Spider && Helper.possibility(0.1)) webJail = true;
         Location loc = attacker.getLocation();
         if (!webJail) {
-            setWebWithDecay(loc.getBlock(), 60);
+            setWebWithDecay(loc.getBlock(), 60, false);
         } else {
             for (Block b : Helper.getSphere(loc.getBlock(), 4)) {
-                setWebWithDecay(b, 30);
+                setWebWithDecay(b, 30, true);
             }
         }
     }
@@ -35,16 +36,20 @@ public class AbilityWebber implements IAbility {
         if (mobEntity instanceof Spider && Helper.possibility(0.1)) webJail = true;
         Location loc = victim.getLocation();
         if (!webJail) {
-            setWebWithDecay(loc.getBlock(), 60);
+            setWebWithDecay(loc.getBlock(), 60, false);
         } else {
             for (Block b : Helper.getSphere(loc.getBlock(), 4)) {
-                setWebWithDecay(b, 30);
+                setWebWithDecay(b, 30, true);
             }
         }
     }
 
-    private static void setWebWithDecay(Block b, int seconds){
+    private static void setWebWithDecay(Block b, int seconds, boolean allowInAir){
         if (b == null || b.getType() != Material.AIR) return;
+        if (!allowInAir) {
+            Block below_block = b.getRelative(BlockFace.DOWN);
+            if (!below_block.getType().isSolid()) return;
+        }
         b.setType(Material.WEB);
         (new BukkitRunnable(){
             @Override

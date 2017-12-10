@@ -104,7 +104,7 @@ public class EventListener implements Listener {
             // infernal mob attacked something
             if (!(trueVictim instanceof Player)) return;
             if (((Player) trueVictim).getGameMode() == GameMode.CREATIVE) return;
-            Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
+            Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
             for (EnumAbilities ab : mob.abilityList) {
                 ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
             }
@@ -184,7 +184,7 @@ public class EventListener implements Listener {
         event.setDroppedExp(xp);
 
         // broadcast death message TODO use ConfigReader
-        if (this.plugin.getConfig().getBoolean("enableDeathMessages") && event.getEntity().getKiller() != null) {
+        if (ConfigReader.isMobDeathMessageEnabled() && event.getEntity().getKiller() != null) {
             Player player = event.getEntity().getKiller();
             String playerName = player.getName();
             String mobName;
@@ -193,7 +193,7 @@ public class EventListener implements Listener {
             } else {
                 mobName = event.getEntity().getType().name();
             }
-            boolean broadcastToAllWorld = this.plugin.getConfig().getBoolean("broadcastToAllWorld");
+            boolean broadcastToAllWorld = ConfigReader.isDeathMessageBroadcastAllWorld();
 
             if (this.plugin.getConfig().getList("deathMessages") != null) {
                 String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
@@ -258,5 +258,7 @@ public class EventListener implements Listener {
         }
 
         plugin.mobManager.mobMap.remove(id);
+
+        // TODO event
     }
 }

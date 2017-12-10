@@ -28,14 +28,17 @@ public class AbilityNecromancer implements IAbility {
         if (victim == null) return;
         WitherSkull w = mobEntity.launchProjectile(WitherSkull.class,
                 victim.getLocation().toVector().clone().subtract(mobLoc.toVector()).normalize());
+        Helper.removeEntityLater(w, 30);
         // TODO WitherSkull tracing player
     }
 
     @Override
     public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (isDirectAttack) {
+            if (Helper.possibility(0.5)) return;
             WitherSkull w = mobEntity.launchProjectile(WitherSkull.class,
                     attacker.getLocation().toVector().clone().subtract(mobEntity.getLocation().toVector()).normalize());
+            Helper.removeEntityLater(w, 30);
             // TODO WitherSkull tracing player
         }
     }

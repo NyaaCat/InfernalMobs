@@ -2,6 +2,7 @@ package com.jacob_vejvoda.infernal_mobs.ability;
 
 import com.jacob_vejvoda.infernal_mobs.ConfigReader;
 import com.jacob_vejvoda.infernal_mobs.Helper;
+import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import org.bukkit.Material;
@@ -16,6 +17,7 @@ public class AbilityMounted implements IAbility {
         if (!ConfigReader.isEnabledRider(ev.mobEntity.getType()) && ev.reason != InfernalSpawnReason.COMMAND) return;
         EntityType mounteeType = Helper.randomItem(ConfigReader.getMounteeTypes());
         LivingEntity mounteeEntity = (LivingEntity) ev.mobEntity.getWorld().spawn(ev.mobEntity.getLocation(), mounteeType.getEntityClass());
+        InfernalMobs.instance.mobManager.unnaturallySpawned.put(mounteeEntity.getUniqueId(), true);
 
         if (mounteeEntity instanceof Horse) {
             ((Horse) mounteeEntity).setColor(Helper.randomItem(Arrays.asList(Horse.Color.values())));

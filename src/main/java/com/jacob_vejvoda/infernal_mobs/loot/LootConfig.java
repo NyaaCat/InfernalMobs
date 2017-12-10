@@ -12,8 +12,8 @@ import java.util.Map;
 /** List of loot items and drop chance table */
 public class LootConfig {
 
-    public Map<String, LootItem> lootItems;
-    public Map<Integer, Map<String, Double>> dropMap; // Map<infernalLevel, Map<dropItemName, dropWeight>>
+    public Map<String, LootItem> lootItems = new HashMap<>();
+    public Map<Integer, Map<String, Double>> dropMap = new HashMap<>(); // Map<infernalLevel, Map<dropItemName, dropWeight>>
 
     LootConfig() {
     }

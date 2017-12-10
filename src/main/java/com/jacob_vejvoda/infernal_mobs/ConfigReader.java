@@ -273,4 +273,12 @@ public class ConfigReader {
     public static int getMamaSpawnAmount() {
         return cfg().getInt("mamaSpawnAmount", 3);
     }
+
+    public static boolean isMobDeathMessageEnabled() {
+        return cfg().getBoolean("enableDeathMessages", true);
+    }
+
+    public static boolean isDeathMessageBroadcastAllWorld() {
+        return cfg().getBoolean("broadcastToAllWorld", false);
+    }
 }

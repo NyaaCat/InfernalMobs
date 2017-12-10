@@ -70,7 +70,12 @@ public class CommandHandler implements CommandExecutor {
                 final World world = asPlayer(sender).getWorld();
                 String enabled = ConfigReader.isEnabledWorld(world) ? "is" : "is not";
                 sender.sendMessage("The world you are currently in, " + world + " " + enabled + " enabled.");
-                sender.sendMessage("All the world that are enabled are: " + plugin.getConfig().getStringList("enabledworlds")); // TODO config reader
+                sender.sendMessage("All the world that are enabled are: ");
+                for (World w : Bukkit.getWorlds()) {
+                    if (ConfigReader.isEnabledWorld(w)) {
+                        sender.sendMessage("- " + w.getName());
+                    }
+                }
             } else if ("abilities".equalsIgnoreCase(subcommand)) {
                 printAbilities(sender);
             } else if ("addloot".equalsIgnoreCase(subcommand)) {

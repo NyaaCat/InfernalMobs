@@ -3,6 +3,8 @@ package com.jacob_vejvoda.infernal_mobs;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.Listener;
 import org.bukkit.scoreboard.*;
@@ -18,7 +20,7 @@ import java.util.UUID;
  */
 public class GUI implements Listener {
     public static final int GUI_SCAN_DISTANCE = 26;
-    private static final String OBJECTIVE_NAME_INFO = "infernal_mob_info";
+    private static final String OBJECTIVE_NAME_INFO = "im_info";
     private final static Map<UUID, Scoreboard> mobScoreboard = new HashMap<>();
 
     private static InfernalMobs getPlugin() {
@@ -26,6 +28,7 @@ public class GUI implements Listener {
     }
 
     public static void refreshPlayerScoreboard(Player p) {
+        // actually, update scoreboards for mobs around the player
         if (!ConfigReader.isScoreboardEnabled()) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
             return;
@@ -69,65 +72,24 @@ public class GUI implements Listener {
             obj.setDisplayName(mobEntity.getType().name());
             int index = 1; // this is the actual "score"
             for (EnumAbilities ab : mob.abilityList) {
-                obj.getScore(ab.name().toLowerCase()).setScore(index);
+                obj.getScore(ab.name().toLowerCase()).setScore(index++);
             }
-            // TODO Health and level info
+            obj.getScore(ChatColor.YELLOW.toString() + ChatColor.BOLD + "Abilities:").setScore(index++);
+            double maxHealth = mobEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+            double health = mobEntity.getHealth();
+            obj.getScore(String.format("Health: %.0f/%.0f", health, maxHealth)).setScore(index);
         } else { // update scoreboard
-            // TODO Health and level info
+            Objective obj = sb.getObjective(OBJECTIVE_NAME_INFO);
+            int index = -1;
+            for (String str : sb.getEntries()) {
+                if (str.startsWith("Health:")) {
+                    index = obj.getScore(str).getScore();
+                    sb.resetScores(str);
+                }
+            }
+            double maxHealth = mobEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+            double health = mobEntity.getHealth();
+            obj.getScore(String.format("Health: %.0f/%.0f", health, maxHealth)).setScore(index);
         }
     }
-
-//    public static void fixScoreboard(final Player player, final Entity e, final ArrayList<String> abilityList) {
-//        if (GUI.plugin.getConfig().getBoolean("enableScoreBoard") && e instanceof Damageable) {
-//            if (GUI.playerScoreBoard.get(player.getName()) == null) {
-//                final ScoreboardManager manager = Bukkit.getScoreboardManager();
-//                final Scoreboard board = manager.getNewScoreboard();
-//                GUI.playerScoreBoard.put(player.getName(), board);
-//            }
-//            final Scoreboard board = GUI.playerScoreBoard.get(player.getName());
-//            Objective o;
-//            if (board.getObjective(DisplaySlot.SIDEBAR) == null) {
-//                o = board.registerNewObjective(player.getName(), "dummy");
-//                o.setDisplaySlot(DisplaySlot.SIDEBAR);
-//            } else {
-//                o = board.getObjective(DisplaySlot.SIDEBAR);
-//            }
-//            o.setDisplayName(e.getType().getName());
-//            for (final String s : board.getEntries()) {
-//                board.resetScores(s);
-//            }
-//            int score = 1;
-//            for (final String ability : abilityList) {
-//                o.getScore(ChatColor.RESET.toString() + ability).setScore(score);
-//                ++score;
-//            }
-//            o.getScore(ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + "Abilities:").setScore(score);
-//            if (GUI.plugin.getConfig().getBoolean("showHealthOnScoreBoard")) {
-//                ++score;
-//                final float health = (float) ((Damageable) e).getHealth();
-//                final float maxHealth = (float) ((Damageable) e).getMaxHealth();
-//                final double roundOff = Math.round(health * 100.0) / 100.0;
-//                o.getScore(String.valueOf(roundOff) + "/" + maxHealth).setScore(score);
-//                ++score;
-//                o.getScore(ChatColor.YELLOW.toString() + ChatColor.BOLD.toString() + "Health:").setScore(score);
-//            }
-//            if (player.getScoreboard() == null || player.getScoreboard().getObjective(DisplaySlot.SIDEBAR) == null || player.getScoreboard().getObjective(DisplaySlot.SIDEBAR).getName() == null || !player.getScoreboard().getObjective(DisplaySlot.SIDEBAR).getName().equals(board.getObjective(DisplaySlot.SIDEBAR).getName())) {
-//                player.setScoreboard(board);
-//            }
-//        }
-//    }
-//
-//    public static String generateString(int maxNames, final ArrayList<String> names) {
-//        String namesString = "";
-//        if (maxNames > names.size()) {
-//            maxNames = names.size();
-//        }
-//        for (int i = 0; i < maxNames; ++i) {
-//            namesString = String.valueOf(namesString) + names.get(i) + " ";
-//        }
-//        if (names.size() > maxNames) {
-//            namesString = String.valueOf(namesString) + "... ";
-//        }
-//        return namesString;
-//    }
 }

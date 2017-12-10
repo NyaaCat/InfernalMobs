@@ -10,6 +10,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -17,7 +19,7 @@ import static org.bukkit.Material.AIR;
 
 /** Randomly levitate nearby players */
 public class AbilityGravity implements IAbility{
-    public static final double EFFECTIVE_RANGE_SQUARED = 100;
+    public static final double EFFECTIVE_RANGE_SQUARED = 25;
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
         if (!Helper.possibility(0.2)) return;
@@ -35,30 +37,8 @@ public class AbilityGravity implements IAbility{
                 .forEach(p -> levitate(p, ConfigReader.getGravityLevitateLength()));
     }
 
-    // TODO replace by levitate potion effect
-    private static void levitate(final Entity e, final int time) {
-        boolean needCheckFlight = e instanceof Player;
-        boolean couldFly = needCheckFlight && ((Player)e).getAllowFlight();
-        if (needCheckFlight) ((Player)e).setAllowFlight(true);
-
-        new BukkitRunnable() {
-            private int counter = 0;
-            @Override
-            public void run() {
-                if (counter < 0) return;
-                counter++;
-                if (counter <= 40) {
-                    e.setVelocity(e.getVelocity().add(new Vector(0, 0.1, 0)));
-                } else if (counter < 40 + time*20) {
-                    final Vector vec = e.getVelocity();
-                    vec.setY(0.01);
-                    e.setVelocity(vec);
-                } else {
-                    counter = -1;
-                    cancel();
-                    if (needCheckFlight && !couldFly) ((Player)e).setAllowFlight(false);
-                }
-            }
-        }.runTaskTimer(InfernalMobs.instance, 1,1);
+    private static void levitate(Player p, int time) {
+        if (p.hasPotionEffect(PotionEffectType.LEVITATION)) return;
+        p.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, time * 20, 1));
     }
 }

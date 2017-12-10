@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
@@ -126,5 +127,14 @@ public class Helper {
         double normalProduct = v1.length() * v2.length();
         double cos = dot/normalProduct;
         return Math.acos(cos);
+    }
+
+    public static void removeEntityLater(Entity e, int ticks) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                e.remove();
+            }
+        }.runTaskLater(InfernalMobs.instance, ticks);
     }
 }

@@ -20,6 +20,7 @@ public class MobManager {
 
     // Map<childId, parentId>
     public final Cache<UUID, UUID> mamaSpawned = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    public final Cache<UUID, Boolean> unnaturallySpawned =  CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     public MobManager(InfernalMobs plugin) {
         this.plugin = plugin;
@@ -37,16 +38,15 @@ public class MobManager {
         UUID id = spawnedEntity.getUniqueId();
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
         Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
+        mobMap.put(id, mob);
+        unnaturallySpawned.put(id, true);
 
         InfernalMobSpawnEvent spwanEvent = new InfernalMobSpawnEvent((LivingEntity) spawnedEntity, mob, parentId, reason);
         for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
-
         setInfernalHealth(spwanEvent);
         setInfernalMobName(spwanEvent);
 
-        // TODO event
-
-        mobMap.put(id, mob);
+        Bukkit.getServer().getPluginManager().callEvent(spwanEvent);
         return mob;
     }
 
@@ -119,7 +119,7 @@ public class MobManager {
 
     /**
      * Change the given entity into infernal mob
-     * TODO may need to be called delayed
+     * may need to be called delayed
      *
      * @param mobEntity     the entity
      */
@@ -128,6 +128,7 @@ public class MobManager {
         if (mobEntity.hasMetadata("NPC") || mobEntity.hasMetadata("shopkeeper")) return;
         if (!isAcceptableBaby(mobEntity)) return;
         final UUID id = mobEntity.getUniqueId();
+        if (unnaturallySpawned.getIfPresent(id) != null) return;
         if (!Helper.possibility(ConfigReader.getInfernalNaturalSpawningPercentage())) return;
 
         List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
@@ -149,7 +150,8 @@ public class MobManager {
         setInfernalMobName(spwanEvent);
 
         mobMap.put(id, mob);
-        // TODO event
+
+        Bukkit.getPluginManager().callEvent(spwanEvent);
 
         // Show message
         if (ConfigReader.isSpwanMessageEnabled()) {
@@ -206,6 +208,7 @@ public class MobManager {
         Entity spawnedEntity = loc.getWorld().spawnEntity(loc, type);
         UUID id = spawnedEntity.getUniqueId();
         mob.entityId = id;
+        unnaturallySpawned.put(id, true);
 
         InfernalMobSpawnEvent spwanEvent = new InfernalMobSpawnEvent((LivingEntity) spawnedEntity, mob, mobEntity.getUniqueId(), InfernalSpawnReason.MORPH);
         for (EnumAbilities ability : mob.abilityList) ability.onMobSpawn(spwanEvent);
@@ -214,10 +217,10 @@ public class MobManager {
         ((LivingEntity) spawnedEntity).setHealth(mobEntity.getHealth());
         setInfernalMobName(spwanEvent);
 
-        // TODO event
         mobMap.put(id, mob);
         mobMap.remove(mobEntity.getUniqueId());
         mobEntity.remove();
+        Bukkit.getPluginManager().callEvent(spwanEvent);
         return (LivingEntity) spawnedEntity;
     }
 

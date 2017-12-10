@@ -1,5 +1,6 @@
 package com.jacob_vejvoda.infernal_mobs.ability;
 
+import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -11,6 +12,7 @@ public class AbilityTosser implements IAbility {
 
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
+        if (Helper.possibility(0.9)) return;
         Location mobLocation = mobEntity.getLocation();
         mobEntity.getWorld().getPlayers().stream()
                 .filter(p -> p.getLocation().distanceSquared(mobLocation) < EFFECTIVE_RANGE_SQUARED)
