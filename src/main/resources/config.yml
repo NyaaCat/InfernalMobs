@@ -208,7 +208,7 @@ enabledSpawnReasons:
 #- VILLAGE_DEFENSE
 - VILLAGE_INVASION
 mobParticles:
-- lavaSpark:1:10
+- LAVA:1:10
 mountFate: nothing
 enabledMounts:
 - SPIDER
