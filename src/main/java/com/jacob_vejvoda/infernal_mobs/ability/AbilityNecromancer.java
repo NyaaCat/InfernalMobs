@@ -4,6 +4,7 @@ import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WitherSkull;
@@ -27,7 +28,9 @@ public class AbilityNecromancer implements IAbility {
         Player victim = Helper.randomItem(players);
         if (victim == null) return;
         WitherSkull w = mobEntity.launchProjectile(WitherSkull.class,
-                victim.getLocation().toVector().clone().subtract(mobLoc.toVector()).normalize());
+                Helper.unitDirectionVector(
+                        mobEntity.getEyeLocation().toVector(),
+                        victim.getEyeLocation().toVector()));
         Helper.removeEntityLater(w, 30);
         // TODO WitherSkull tracing player
     }
@@ -37,7 +40,9 @@ public class AbilityNecromancer implements IAbility {
         if (isDirectAttack) {
             if (Helper.possibility(0.5)) return;
             WitherSkull w = mobEntity.launchProjectile(WitherSkull.class,
-                    attacker.getLocation().toVector().clone().subtract(mobEntity.getLocation().toVector()).normalize());
+                    Helper.unitDirectionVector(
+                            mobEntity.getEyeLocation().toVector(),
+                            attacker.getEyeLocation().toVector()));
             Helper.removeEntityLater(w, 30);
             // TODO WitherSkull tracing player
         }

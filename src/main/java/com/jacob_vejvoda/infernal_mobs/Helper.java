@@ -137,4 +137,13 @@ public class Helper {
             }
         }.runTaskLater(InfernalMobs.instance, ticks);
     }
+
+    public static Vector unitDirectionVector(Vector from, Vector to) {
+        Vector vec = to.clone().subtract(from);
+        if (!Double.isFinite(vec.getX())) vec.setX(0D);
+        if (!Double.isFinite(vec.getY())) vec.setY(0D);
+        if (!Double.isFinite(vec.getZ())) vec.setZ(0D);
+        if (vec.lengthSquared() == 0) return new Vector(0,0,0);
+        return vec.normalize();
+    }
 }

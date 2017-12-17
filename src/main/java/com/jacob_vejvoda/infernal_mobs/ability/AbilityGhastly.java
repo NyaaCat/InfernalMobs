@@ -25,7 +25,9 @@ public class AbilityGhastly implements IAbility {
         Player victim = Helper.randomItem(players);
         if (victim == null) return;
         Fireball f = mobEntity.launchProjectile(Fireball.class,
-                victim.getLocation().toVector().clone().subtract(mobLoc.toVector()).normalize());
+                Helper.unitDirectionVector(
+                        mobEntity.getEyeLocation().toVector(),
+                        victim.getEyeLocation().toVector()));
         Helper.removeEntityLater(f, 30);
         // TODO fireball tracing player
     }
@@ -35,7 +37,9 @@ public class AbilityGhastly implements IAbility {
         if (!isDirectAttack) {
             if (Helper.possibility(0.5)) return;
             Fireball f = mobEntity.launchProjectile(Fireball.class,
-                    attacker.getLocation().toVector().clone().subtract(mobEntity.getLocation().toVector()).normalize());
+                    Helper.unitDirectionVector(
+                            mobEntity.getEyeLocation().toVector(),
+                            attacker.getEyeLocation().toVector()));
             Helper.removeEntityLater(f, 30);
             // TODO fireball tracing player
         }

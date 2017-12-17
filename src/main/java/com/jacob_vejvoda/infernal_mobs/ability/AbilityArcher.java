@@ -25,7 +25,9 @@ public class AbilityArcher implements IAbility {
         }
         Player victim = Helper.randomItem(candidates);
         if (victim == null) return;
-        Vector v = victim.getEyeLocation().toVector().subtract(mobEntity.getEyeLocation().toVector()).normalize();
+        Vector v = Helper.unitDirectionVector(
+                mobEntity.getEyeLocation().toVector(),
+                victim.getEyeLocation().toVector());
         for (int i = 0;i<1;i++) {
             mobEntity.launchProjectile(Arrow.class, v);
         }
