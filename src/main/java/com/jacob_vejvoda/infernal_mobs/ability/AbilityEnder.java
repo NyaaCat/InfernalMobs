@@ -17,22 +17,31 @@ public class AbilityEnder implements IAbility {
             if (Helper.possibility(0.5)) return;
             EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), attacker.getLocation());
             Bukkit.getPluginManager().callEvent(event);
-            if (event.isCancelled()) return;
+            if (event.isCancelled()) {
+                return;
+            }
             mobEntity.teleport(attacker.getLocation());
         } else if (Helper.possibility(0.2)) {
             double x = mobEntity.getLocation().getX() + Helper.rand(-5D, 5D);
             double z = mobEntity.getLocation().getZ() + Helper.rand(-5D, 5D);
-            double y = mobEntity.getWorld().getHighestBlockYAt((int)x, (int)z) + 1;
-            EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), new Location(mobEntity.getWorld(), x,y,z));
+            double y = mobEntity.getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
+            EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), new Location(mobEntity.getWorld(), x, y, z));
             Bukkit.getPluginManager().callEvent(event);
-            if (event.isCancelled()) return;
-            mobEntity.teleport(new Location(mobEntity.getWorld(), x,y,z));
+            if (event.isCancelled()) {
+                return;
+            }
+            mobEntity.teleport(new Location(mobEntity.getWorld(), x, y, z));
         }
     }
 
     @Override
     public void onAttackPlayer(LivingEntity mobEntity, Mob mob, Player victim, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (mobEntity.isInsideVehicle() || Helper.possibility(0.5)) return;
-        if (!isDirectAttack) mobEntity.teleport(victim.getLocation());
+        if (!isDirectAttack) {
+            EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), victim.getLocation());
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancelled()) return;
+            mobEntity.teleport(victim.getLocation());
+        }
     }
 }
