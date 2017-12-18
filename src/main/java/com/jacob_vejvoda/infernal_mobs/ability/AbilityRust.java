@@ -20,8 +20,8 @@ public class AbilityRust implements IAbility {
         int damage = Math.round(20F / (item.getEnchantmentLevel(Enchantment.DURABILITY)+1F));
         if (damage <= 0) damage = 1;
         int newDamage = item.getDurability() + damage;
-        if (newDamage >= item.getType().getMaxDurability()) {
-            item.setAmount(0);
+        if (newDamage > item.getType().getMaxDurability()) {
+            item.setDurability((short) (item.getType().getMaxDurability()+1));
         } else {
             item.setDurability((short) newDamage);
         }
