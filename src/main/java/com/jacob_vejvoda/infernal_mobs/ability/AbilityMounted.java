@@ -6,7 +6,9 @@ import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import org.bukkit.Material;
-import org.bukkit.entity.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Arrays;
@@ -18,7 +20,7 @@ public class AbilityMounted implements IAbility {
         EntityType mounteeType = Helper.randomItem(ConfigReader.getMounteeTypes());
         LivingEntity mounteeEntity = (LivingEntity) ev.mobEntity.getWorld().spawn(ev.mobEntity.getLocation(), mounteeType.getEntityClass());
         InfernalMobs.instance.mobManager.unnaturallySpawned.put(mounteeEntity.getUniqueId(), true);
-
+        mounteeEntity.addPassenger(ev.mobEntity);
         if (mounteeEntity instanceof Horse) {
             ((Horse) mounteeEntity).setColor(Helper.randomItem(Arrays.asList(Horse.Color.values())));
             ((Horse) mounteeEntity).setStyle(Helper.randomItem(Arrays.asList(Horse.Style.values())));
