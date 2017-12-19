@@ -22,6 +22,10 @@ public class InfernalMobSpawnEvent extends Event{
     public HandlerList getHandlers() {
         return handlers;
     }
+    
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
 
     public InfernalMobSpawnEvent(LivingEntity mobEntity, Mob mob, UUID parentId, InfernalSpawnReason reason) {
         this.mobEntity = mobEntity;
