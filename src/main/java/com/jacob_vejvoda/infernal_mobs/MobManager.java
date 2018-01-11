@@ -6,7 +6,9 @@ import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 
@@ -133,7 +135,9 @@ public class MobManager {
 
         List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
         if (abilities == null || abilities.size() <= 0)return;
-
+        if (mamaSpawned.getIfPresent(id) != null && abilities.contains(EnumAbilities.MAMA)) {
+            abilities.remove(EnumAbilities.MAMA);
+        }
         // setup infernal mob
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
         Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
@@ -141,7 +145,6 @@ public class MobManager {
         InfernalMobSpawnEvent spwanEvent;
         if (mamaSpawned.getIfPresent(id) != null) {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, mamaSpawned.getIfPresent(id), InfernalSpawnReason.MAMA);
-            abilities.remove(EnumAbilities.MAMA);
         } else {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, null, InfernalSpawnReason.NATURAL);
         }
