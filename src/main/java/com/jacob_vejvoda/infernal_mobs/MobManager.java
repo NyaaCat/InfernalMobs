@@ -141,6 +141,7 @@ public class MobManager {
         InfernalMobSpawnEvent spwanEvent;
         if (mamaSpawned.getIfPresent(id) != null) {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, mamaSpawned.getIfPresent(id), InfernalSpawnReason.MAMA);
+            abilities.remove(EnumAbilities.MAMA);
         } else {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, null, InfernalSpawnReason.NATURAL);
         }
