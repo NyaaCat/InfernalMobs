@@ -30,3 +30,7 @@ deploy:
   prerelease: true
   api_key: $GITHUB_OAUTH_TOKEN
   file: ./InfernalMobs-v$VERSION_STRING.jar
+branches:
+  except:
+  - "/^*-v[0-9]/"
+  - "/^*-mc/"
