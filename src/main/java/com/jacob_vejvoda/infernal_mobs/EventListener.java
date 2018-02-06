@@ -14,10 +14,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -25,6 +22,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -270,6 +269,31 @@ public class EventListener implements Listener {
                         entity.remove();
                     }
                 }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityTargetLivingEntity(EntityTargetLivingEntityEvent event) {
+        if (plugin.mobManager.mobMap.containsKey(event.getEntity().getUniqueId()) &&
+                plugin.mobManager.mobMap.containsKey(event.getTarget().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPotionHit(PotionSplashEvent event) {
+        ProjectileSource source = event.getEntity().getShooter();
+        if (source instanceof LivingEntity &&
+                plugin.mobManager.mobMap.containsKey(((LivingEntity) source).getUniqueId())) {
+            List<LivingEntity> affectedEntities = new ArrayList<>();
+            for (LivingEntity e : event.getAffectedEntities()) {
+                if (plugin.mobManager.mobMap.containsKey(e.getUniqueId())) {
+                    affectedEntities.add(e);
+                }
+            }
+            for (LivingEntity e : affectedEntities) {
+                event.setIntensity(e, 0.0D);
             }
         }
     }
