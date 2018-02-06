@@ -94,7 +94,7 @@ public class MobManager {
         tag = tag.replace("<mobName>", type.name())
                 .replace("<mobLevel>", Integer.toString(abilities.size()))
                 .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32))
-                .replace("<prefix>", ConfigReader.getNameTagPrefix(abilities.size()));
+                .replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(abilities.size()));
         tag = ChatColor.translateAlternateColorCodes('&', tag);
         return tag;
     }

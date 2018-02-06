@@ -129,12 +129,16 @@ public class ConfigReader {
         return cfg().getString("nameTagsName", "&fInfernal <mobName>");
     }
 
-    public static String getNameTagPrefix(int level) {
+    public static String getNameTagPrefixByLevel(int level) {
         if (cfg().isString("levelPrefixs." + level)) {
             return cfg().getString("levelPrefixs." + level);
         } else {
-            return cfg().getString("namePrefix", "");
+            return getNamePrefix();
         }
+    }
+
+    public static String getNamePrefix() {
+        return cfg().getString("namePrefix", "");
     }
 
     public static boolean isScoreboardEnabled() {

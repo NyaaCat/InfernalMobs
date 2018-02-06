@@ -1,17 +1,21 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
-import com.jacob_vejvoda.infernal_mobs.persist.Mob;
-import com.jacob_vejvoda.infernal_mobs.persist.PersistStorage;
 import com.jacob_vejvoda.infernal_mobs.loot.LootManager;
-import org.bukkit.*;
-import org.bukkit.entity.*;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.File;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 public class InfernalMobs extends JavaPlugin {
     public static InfernalMobs instance;
@@ -20,7 +24,6 @@ public class InfernalMobs extends JavaPlugin {
     public EventListener events;
     public CommandHandler cmd;
     public MobManager mobManager;
-    public PersistStorage persist;
     public LootManager lootManager;
 
     public InfernalMobs() {
@@ -32,14 +35,12 @@ public class InfernalMobs extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
         saveResource("loot.yml", false);
-        persist = new PersistStorage(this, new File(getDataFolder(), "save.yml"));
         this.cmd = new CommandHandler(this);
         this.events = new EventListener(this);
         this.mobManager = new MobManager(this);
         this.lootManager = new LootManager(this);
         this.getCommand("infernalmobs").setExecutor(cmd);
         this.getServer().getPluginManager().registerEvents(this.events, this);
-        persist.loadToMemory();
 
         // Start the main loop
         new BukkitRunnable(){
@@ -48,17 +49,20 @@ public class InfernalMobs extends JavaPlugin {
                 mainLoop();
             }
         }.runTaskTimer(this, 20L, 20L);
-        new BukkitRunnable(){
-            @Override
-            public void run() {
-                persist.saveToFile();
-            }
-        }.runTaskTimer(this, 600*20, 600*20);
     }
 
     @Override
     public void onDisable() {
-        persist.saveToFile();
+        for (World w : getServer().getWorlds()) {
+            if (ConfigReader.isEnabledWorld(w)) {
+                for (Entity e : w.getLivingEntities()) {
+                    if (mobManager.mobMap.containsKey(e.getUniqueId())) {
+                        mobManager.mobMap.remove(e.getUniqueId());
+                        e.remove();
+                    }
+                }
+            }
+        }
     }
 
     /**

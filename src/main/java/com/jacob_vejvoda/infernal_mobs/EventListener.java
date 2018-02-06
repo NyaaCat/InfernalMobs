@@ -3,24 +3,30 @@ package com.jacob_vejvoda.infernal_mobs;
 import cat.nyaa.nyaacore.Message;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.*;
+import java.util.Random;
+import java.util.UUID;
 
 public class EventListener implements Listener {
     private final InfernalMobs plugin;
@@ -127,19 +133,6 @@ public class EventListener implements Listener {
                 plugin.mobManager.infernalNaturalSpawn(e);
             }
         }.runTaskLater(plugin, 10L);
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onBlockBreak(final BlockBreakEvent e) {
-        if (e.getBlock().getType().equals(Material.MOB_SPAWNER)) {
-            Location loc = e.getBlock().getLocation();
-            if (plugin.persist.validInfernalSpawners.containsKey(loc)) {
-                plugin.persist.validInfernalSpawners.remove(loc);
-                if (e.getPlayer().isOp()) {
-                    e.getPlayer().sendMessage("§cYou broke an infernal mob spawner!");
-                }
-            }
-        }
     }
 
     private static boolean determineShouldDrop(boolean killedByPlayer, boolean isCreativePlayer) {
@@ -260,5 +253,24 @@ public class EventListener implements Listener {
         plugin.mobManager.mobMap.remove(id);
 
         // TODO event
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onChunkLoad(ChunkLoadEvent event) {
+        if (!event.isNewChunk() && event.getChunk() != null && ConfigReader.isEnabledWorld(event.getWorld())) {
+            for (Entity entity : event.getChunk().getEntities()) {
+                if (entity instanceof LivingEntity &&
+                        plugin.mobManager.mobMap.get(entity.getUniqueId()) == null &&
+                        entity.getCustomName() != null) {
+                    if (ConfigReader.isInfernalMobNameTagAlwaysVisible() && !entity.isCustomNameVisible()) {
+                        return;
+                    }
+                    String prefix = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', ConfigReader.getNamePrefix()));
+                    if (ChatColor.stripColor(entity.getCustomName()).startsWith(prefix)) {
+                        entity.remove();
+                    }
+                }
+            }
+        }
     }
 }
