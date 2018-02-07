@@ -262,7 +262,7 @@ public class EventListener implements Listener {
                         plugin.mobManager.mobMap.get(entity.getUniqueId()) == null &&
                         entity.getCustomName() != null) {
                     if (ConfigReader.isInfernalMobNameTagAlwaysVisible() && !entity.isCustomNameVisible()) {
-                        return;
+                        break;
                     }
                     String prefix = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', ConfigReader.getNamePrefix()));
                     if (ChatColor.stripColor(entity.getCustomName()).startsWith(prefix)) {
