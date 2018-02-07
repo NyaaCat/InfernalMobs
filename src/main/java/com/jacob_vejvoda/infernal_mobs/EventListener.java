@@ -254,7 +254,7 @@ public class EventListener implements Listener {
         // TODO event
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (!event.isNewChunk() && event.getChunk() != null && ConfigReader.isEnabledWorld(event.getWorld())) {
             for (Entity entity : event.getChunk().getEntities()) {
@@ -262,7 +262,7 @@ public class EventListener implements Listener {
                         plugin.mobManager.mobMap.get(entity.getUniqueId()) == null &&
                         entity.getCustomName() != null) {
                     if (ConfigReader.isInfernalMobNameTagAlwaysVisible() && !entity.isCustomNameVisible()) {
-                        break;
+                        continue;
                     }
                     String prefix = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', ConfigReader.getNamePrefix()));
                     if (ChatColor.stripColor(entity.getCustomName()).startsWith(prefix)) {
@@ -275,7 +275,7 @@ public class EventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityTargetLivingEntity(EntityTargetLivingEntityEvent event) {
-        if (plugin.mobManager.mobMap.containsKey(event.getEntity().getUniqueId()) &&
+        if (event.getTarget() != null && plugin.mobManager.mobMap.containsKey(event.getEntity().getUniqueId()) &&
                 plugin.mobManager.mobMap.containsKey(event.getTarget().getUniqueId())) {
             event.setCancelled(true);
         }
