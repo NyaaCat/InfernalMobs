@@ -126,25 +126,32 @@ public class MobManager {
      * @param mobEntity     the entity
      */
     public void infernalNaturalSpawn(LivingEntity mobEntity) {
-        if (mobEntity.isDead() || !mobEntity.isValid()) return;
+        if (mobEntity.isDead() || !mobEntity.isValid() || mobEntity.getCustomName() != null) return;
         if (mobEntity.hasMetadata("NPC") || mobEntity.hasMetadata("shopkeeper")) return;
         if (!isAcceptableBaby(mobEntity)) return;
         final UUID id = mobEntity.getUniqueId();
+        UUID parentId = mamaSpawned.getIfPresent(id);
         if (unnaturallySpawned.getIfPresent(id) != null) return;
         if (!Helper.possibility(ConfigReader.getInfernalNaturalSpawningPercentage())) return;
 
         List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
-        if (abilities == null || abilities.size() <= 0)return;
-        if (mamaSpawned.getIfPresent(id) != null && abilities.contains(EnumAbilities.MAMA)) {
-            abilities.remove(EnumAbilities.MAMA);
+        if (abilities == null || abilities.size() <= 0) return;
+        if (parentId != null) {
+            if (!mobMap.containsKey(parentId) || mobMap.get(parentId).maxMamaInfernal <= 0) {
+                return;
+            }
+            mobMap.get(parentId).maxMamaInfernal--;
+            if (abilities.contains(EnumAbilities.MAMA)) {
+                abilities.remove(EnumAbilities.MAMA);
+            }
         }
         // setup infernal mob
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
         Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
 
         InfernalMobSpawnEvent spwanEvent;
-        if (mamaSpawned.getIfPresent(id) != null) {
-            spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, mamaSpawned.getIfPresent(id), InfernalSpawnReason.MAMA);
+        if (parentId != null) {
+            spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, parentId, InfernalSpawnReason.MAMA);
         } else {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, null, InfernalSpawnReason.NATURAL);
         }
