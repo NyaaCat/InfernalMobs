@@ -1,10 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
-import static cat.nyaa.nyaacore.CommandReceiver.Arguments;
-
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
-import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import com.jacob_vejvoda.infernal_mobs.loot.LootItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,6 +16,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+
+import static cat.nyaa.nyaacore.CommandReceiver.Arguments;
 
 public class CommandHandler implements CommandExecutor {
     private static final class NotPlayerException extends RuntimeException { }
@@ -153,11 +152,21 @@ public class CommandHandler implements CommandExecutor {
                 }
                 sender.sendMessage("§eKilled all infernal mobs near you!");
             } else if ("getloot".equalsIgnoreCase(subcommand)) {
-                String name = arg.nextString();
-                ItemStack i = plugin.lootManager.getLootByName(asPlayer(sender), name);
-                if (i != null) {
-                    asPlayer(sender).getInventory().addItem(i);
-                    sender.sendMessage("§eGave you the loot: " + name);
+                if (arg.top() == null) {
+                    Player player = asPlayer(sender);
+                    final int powers = Helper.rand(ConfigReader.getMinimalLevel(), ConfigReader.getMaximumLevel());
+                    final ItemStack gottenLoot = plugin.lootManager.getRandomLoot(player, powers);
+                    if (gottenLoot != null && gottenLoot.getType() != Material.AIR) {
+                        player.getInventory().addItem(gottenLoot);
+                        sender.sendMessage("§eGave you some random loot!");
+                    }
+                } else {
+                    String name = arg.nextString();
+                    ItemStack i = plugin.lootManager.getLootByName(asPlayer(sender), name);
+                    if (i != null && i.getType() != Material.AIR) {
+                        asPlayer(sender).getInventory().addItem(i);
+                        sender.sendMessage("§eGave you the loot: " + name);
+                    }
                 }
             } else if ("spawn".equalsIgnoreCase(subcommand)) {
                 EntityType type = arg.nextEnum(EntityType.class);

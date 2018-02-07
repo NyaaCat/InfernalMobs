@@ -34,7 +34,6 @@ public class InfernalMobs extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
         reloadConfig();
-        saveResource("loot.yml", false);
         this.cmd = new CommandHandler(this);
         this.events = new EventListener(this);
         this.mobManager = new MobManager(this);
