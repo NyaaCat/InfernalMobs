@@ -143,6 +143,9 @@ public class MobManager {
             mobMap.get(parentId).maxMamaInfernal--;
             if (abilities.contains(EnumAbilities.MAMA)) {
                 abilities.remove(EnumAbilities.MAMA);
+                if (abilities.size() <= 0) {
+                    return;
+                }
             }
         }
         // setup infernal mob
