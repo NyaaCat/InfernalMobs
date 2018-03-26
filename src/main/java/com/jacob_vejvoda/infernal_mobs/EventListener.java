@@ -297,4 +297,11 @@ public class EventListener implements Listener {
             }
         }
     }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onMobTeleport(EntityTeleportEvent event) {
+        if (plugin.mobManager.mobMap.containsKey(event.getEntity().getUniqueId()) && event.getFrom().getWorld() != event.getTo().getWorld()) {
+            event.setCancelled(true);
+        }
+    }
 }
