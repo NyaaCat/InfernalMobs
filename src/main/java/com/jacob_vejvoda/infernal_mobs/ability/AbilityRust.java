@@ -15,7 +15,7 @@ public class AbilityRust implements IAbility {
     public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (Helper.possibility(0.3)) return;
         ItemStack item = attacker.getInventory().getItemInMainHand();
-        if (item == null || item.getType() == AIR || (item.hasItemMeta() && item.getItemMeta().isUnbreakable())) return;
+        if (item == null || item.getType() == AIR) return;
         if (item.getType().getMaxDurability() < 1) return;
         int damage = Math.round(20F / (item.getEnchantmentLevel(Enchantment.DURABILITY)+1F));
         if (damage <= 0) damage = 1;

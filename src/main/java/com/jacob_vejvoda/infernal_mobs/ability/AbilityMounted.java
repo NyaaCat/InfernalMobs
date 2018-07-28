@@ -29,7 +29,7 @@ public class AbilityMounted implements IAbility {
                 ((Horse) mounteeEntity).getInventory().setSaddle(new ItemStack(Material.SADDLE));
             }
             if (ev.mob.abilityList.contains(EnumAbilities.ARMOURED) && ConfigReader.isArmouredMounteeNeedArmour()) {
-                ((Horse) mounteeEntity).getInventory().setArmor(new ItemStack(Material.DIAMOND_HORSE_ARMOR));
+                ((Horse) mounteeEntity).getInventory().setArmor(new ItemStack(Material.DIAMOND_BARDING));
             }
         }
     }

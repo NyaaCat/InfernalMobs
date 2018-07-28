@@ -1,7 +1,6 @@
 package com.jacob_vejvoda.infernal_mobs.loot;
 
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -72,11 +71,7 @@ public class LootConfig {
                 i.extraEnchants = new HashMap<>();
                 ConfigurationSection sec = s.getConfigurationSection("extraEnchants");
                 for (String ench : sec.getKeys(false)) {
-                    Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft(ench));
-                    if (enchantment == null) {
-                        enchantment = Enchantment.getByName(ench);
-                    }
-                    i.extraEnchants.put(enchantment, RangePair.parse(sec.getString(ench)));
+                    i.extraEnchants.put(Enchantment.getByName(ench), RangePair.parse(sec.getString(ench)));
                 }
             }
             if (s.isString("amountRange")) i.amountRange = RangePair.parse(s.getString("amountRange"));
@@ -111,7 +106,7 @@ public class LootConfig {
             if (item.extraEnchants != null) {
                 ConfigurationSection sec = s.createSection("extraEnchants");
                 for (Enchantment e : item.extraEnchants.keySet()) {
-                    sec.set(e.getKey().getKey(), item.extraEnchants.get(e).toString());
+                    sec.set(e.getName(), item.extraEnchants.get(e).toString());
                 }
             }
         }
