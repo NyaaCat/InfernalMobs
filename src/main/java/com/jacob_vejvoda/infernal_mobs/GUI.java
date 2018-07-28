@@ -37,7 +37,7 @@ public class GUI implements Listener {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
             return;
         }
-        if (p.getScoreboard().getTeam("bloodmoon") != null) {
+        if (p.getScoreboard().getTeam("bloodmoon") != null && p.getScoreboard().getTeam("bloodmoon").hasEntry(p.getName())) {
             return;
         }
         // Select mob
