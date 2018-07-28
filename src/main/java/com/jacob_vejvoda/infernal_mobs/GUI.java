@@ -5,9 +5,13 @@ import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -33,7 +37,9 @@ public class GUI implements Listener {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
             return;
         }
-
+        if (p.getScoreboard().getTeam("bloodmoon") != null) {
+            return;
+        }
         // Select mob
         Mob mob = null;
         LivingEntity mobEntity = null;
