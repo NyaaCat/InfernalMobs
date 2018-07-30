@@ -4,7 +4,7 @@ apply plugin: 'java'
 // Note the spaces before and after the equals sign
 ext.majorVersion = 5
 ext.minorVersion = 1
-ext.minecraftVersion = "1.12"
+ext.minecraftVersion = "1.13"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -31,8 +31,11 @@ repositories {
 archivesBaseName = 'InfernalMobs'
 
 dependencies {
-    compile 'org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT'
-    compile('cat.nyaa:nyaacore:4.1-SNAPSHOT') {
+    compile 'org.spigotmc:spigot-api:1.13-R0.1-SNAPSHOT'
+    compile('cat.nyaa:nyaacore:6.1-SNAPSHOT') {
         transitive = false
     }
+}
+compileJava {
+    options.compilerArgs += ["-Xlint:deprecation"]
 }

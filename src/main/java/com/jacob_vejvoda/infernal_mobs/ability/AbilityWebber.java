@@ -50,11 +50,11 @@ public class AbilityWebber implements IAbility {
             Block below_block = b.getRelative(BlockFace.DOWN);
             if (!below_block.getType().isSolid()) return;
         }
-        b.setType(Material.WEB);
+        b.setType(Material.COBWEB);
         (new BukkitRunnable(){
             @Override
             public void run() {
-                if (b.getType() == Material.WEB) {
+                if (b.getType() == Material.COBWEB) {
                     b.setType(Material.AIR);
                 }
             }
