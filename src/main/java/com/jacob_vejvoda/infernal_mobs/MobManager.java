@@ -2,18 +2,24 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities.*;
 
 public class MobManager {
     public final Map<UUID, Mob> mobMap = new HashMap<>();
@@ -238,77 +244,69 @@ public class MobManager {
         return (LivingEntity) spawnedEntity;
     }
 
+    public void spawnGhost(UUID parentId, Location loc) {
+        boolean isEvil = Helper.possibility(0.3);
 
+        // ability list
+        List<EnumAbilities> abilities = null;
+        if (isEvil)
+            abilities = Lists.newArrayList(CLOAKED, ENDER, NECROMANCER, WITHERING, BLINDING);
+        else
+            abilities = Lists.newArrayList(CLOAKED, ENDER, GHASTLY, SAPPER, CONFUSING);
 
-    /*
-     * TODO Spawn a ghost infernalMob
-     */
-//    public void spawnGhost(final Location l) {
-//        boolean evil = false;
-//        if (new Random().nextInt(3) == 1) {
-//            evil = true;
-//        }
-//        final Zombie g = (Zombie) l.getWorld().spawnEntity(l, EntityType.ZOMBIE);
-//        g.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 199999980, 1));
-//        g.setCanPickupItems(false);
-//        final ItemStack chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
-//        ItemStack skull;
-//        if (evil) {
-//            skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 1);
-//            Helper.changeLeatherColor(chest, Color.BLACK);
-//        } else {
-//            skull = new ItemStack(Material.SKULL_ITEM, 1);
-//            Helper.changeLeatherColor(chest, Color.WHITE);
-//        }
-//        chest.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, new Random().nextInt(10) + 1);
-//        final ItemMeta m = skull.getItemMeta();
-//        m.setDisplayName("§fGhost Head");
-//        skull.setItemMeta(m);
-//        g.getEquipment().setHelmet(skull);
-//        g.getEquipment().setChestplate(chest);
-//        g.getEquipment().setHelmetDropChance(0.0f);
-//        g.getEquipment().setChestplateDropChance(0.0f);
-//        final int min = 1;
-//        final int max = 5;
-//        final int rn = new Random().nextInt(max - min + 1) + min;
-//        if (rn == 1) {
-//            g.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_HOE, 1));
-//            g.getEquipment().setItemInMainHandDropChance(0.0f);
-//        }
-//
-//        // Ghost Mobs have special moving pattern
-//        new BukkitRunnable() {
-//            private boolean cancelled = false;
-//            @Override
-//            public void run() {
-//                if (cancelled) return;
-//                if (g.isDead()) {
-//                    cancelled = true;
-//                    this.cancel();
-//                    return;
-//                }
-//                final Vector v = g.getLocation().getDirection().multiply(0.3);
-//                g.setVelocity(v);
-//            }
-//        }.runTaskTimer(infernal_mobs.instance, 2L, 2L);
-//
-//        final ArrayList<EnumAbilities> aList = new ArrayList<>();
-//        aList.add(EnumAbilities.ENDER);
-//        if (evil) {
-//            aList.add(EnumAbilities.NECROMANCER);
-//            aList.add(EnumAbilities.WITHERING);
-//            aList.add(EnumAbilities.BLINDING);
-//        } else {
-//            aList.add(EnumAbilities.GHASTLY);
-//            aList.add(EnumAbilities.SAPPER);
-//            aList.add(EnumAbilities.CONFUSING);
-//        }
-//        Mob newMob;
-//        if (evil) {
-//            newMob = new Mob( g, g.getUniqueId(), g.getWorld(), aList, 1, new ParticleEffect(Particle.SMOKE_NORMAL, 2, 12));
-//        } else {
-//            newMob = new Mob( g, g.getUniqueId(), g.getWorld(), aList, 1, new ParticleEffect(Particle.CLOUD, 0, 8));
-//        }
-//        mobMap.put(newMob.entityId, newMob);
-//    }
+        // spawn
+        Mob mob = spawnMob(EntityType.ZOMBIE, loc, abilities, parentId, InfernalSpawnReason.GHOST);
+        LivingEntity mobEntity = (LivingEntity) Bukkit.getServer().getEntity(mob.entityId);
+        mobEntity.setCanPickupItems(false);
+
+        ItemStack chest, head;
+        if (isEvil) {
+            mob.particleEffect = new ParticleEffect(Particle.SMOKE_NORMAL, 2, 12);
+            chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
+            Helper.changeLeatherColor(chest, Color.BLACK);
+            chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
+
+            head = new ItemStack(Material.WITHER_SKELETON_SKULL, 1);
+            ItemMeta m = head.getItemMeta();
+            m.setDisplayName(ChatColor.BLACK + "Ghost Head");
+            head.setItemMeta(m);
+        } else {
+            mob.particleEffect = new ParticleEffect(Particle.CLOUD, 0, 8);
+            chest = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
+            Helper.changeLeatherColor(chest, Color.WHITE);
+            chest.addEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
+
+            head = new ItemStack(Material.SKELETON_SKULL, 1);
+            ItemMeta m = head.getItemMeta();
+            m.setDisplayName(ChatColor.WHITE + "Ghost Head");
+            head.setItemMeta(m);
+        }
+
+        mobEntity.getEquipment().setHelmet(head);
+        mobEntity.getEquipment().setChestplate(chest);
+        mobEntity.getEquipment().setHelmetDropChance(0);
+        mobEntity.getEquipment().setChestplateDropChance(0);
+
+        if (Helper.possibility(0.2)) {
+            mobEntity.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_HOE));
+            mobEntity.getEquipment().setItemInMainHandDropChance(0);
+        }
+
+        // setup moving pattern
+        final LivingEntity g = mobEntity;
+        new BukkitRunnable() {
+            private boolean cancelled = false;
+            @Override
+            public void run() {
+                if (cancelled) return;
+                if (g.isDead()) {
+                    cancelled = true;
+                    this.cancel();
+                    return;
+                }
+                org.bukkit.util.Vector v = g.getEyeLocation().getDirection().multiply(0.3);
+                g.setVelocity(v);
+            }
+        }.runTaskTimer(InfernalMobs.instance, 2L, 2L);
+    }
 }

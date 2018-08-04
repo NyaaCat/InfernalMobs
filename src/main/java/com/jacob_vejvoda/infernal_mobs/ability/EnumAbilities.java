@@ -26,7 +26,6 @@ public enum EnumAbilities implements IAbility {
     RUST("rust", AbilityRust.class),
     BULLWARK("bullwark", AbilityBullwark.class),
     QUICKSAND("quicksand", AbilityQuicksand.class),
-    THIEF("thief", AbilityThief.class),
     TOSSER("tosser", AbilityTosser.class),
     WITHERING("withering", AbilityWithering.class),
     BLINDING("blinding", AbilityBlinding.class),
