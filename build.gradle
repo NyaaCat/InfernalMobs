@@ -32,8 +32,12 @@ archivesBaseName = 'InfernalMobs'
 
 dependencies {
     compile 'org.spigotmc:spigot-api:1.13-R0.1-SNAPSHOT'
-    compile('cat.nyaa:nyaacore:6.1-SNAPSHOT') {
-        transitive = false
+    if (gradle.hasProperty('useLocalDependencies')) {
+        compile project(':NyaaCore')
+    } else {
+        compile('cat.nyaa:nyaacore:6.1-SNAPSHOT') {
+            transitive = false
+        }
     }
 }
 compileJava {
