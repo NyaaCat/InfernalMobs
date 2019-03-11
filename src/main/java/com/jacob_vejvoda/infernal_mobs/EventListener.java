@@ -65,6 +65,7 @@ public class EventListener implements Listener {
                     GUI.refreshPlayerScoreboard((Player)entity);
                 }
             }
+            BossBarManager.updateBar();
         }
     }
 
