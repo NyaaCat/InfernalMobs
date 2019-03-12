@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -14,6 +15,8 @@ import java.util.List;
 import static org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public class ConfigReader {
+    private static LevelConfig levelConfig;
+
     private static ConfigurationSection cfg() {
         return InfernalMobs.instance.getConfig();
     }
@@ -284,5 +287,23 @@ public class ConfigReader {
 
     public static boolean isDeathMessageBroadcastAllWorld() {
         return cfg().getBoolean("broadcastToAllWorld", false);
+    }
+
+    public static boolean isSpawnedByConfig() {
+        return cfg().getBoolean("configSpawn", false);
+    }
+
+    public static LevelConfig getLevelConfig() {
+        return levelConfig == null? loadLevelConfig(): levelConfig;
+    }
+
+    private static LevelConfig loadLevelConfig() {
+        levelConfig = new LevelConfig();
+        levelConfig.load();
+        return levelConfig;
+    }
+
+    public static boolean isHealthByConfig() {
+        return cfg().getBoolean("configSpawn");
     }
 }

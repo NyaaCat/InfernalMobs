@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
 import org.bukkit.*;
@@ -28,13 +29,15 @@ public class MobManager {
 
     // Map<childId, parentId>
     public final Cache<UUID, UUID> mamaSpawned = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
-    public final Cache<UUID, Boolean> unnaturallySpawned =  CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    public final Cache<UUID, Boolean> unnaturallySpawned = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     public MobManager(InfernalMobs plugin) {
         this.plugin = plugin;
     }
 
-    /** spwan an infernal mob from nowhere */
+    /**
+     * spwan an infernal mob from nowhere
+     */
     public Mob spawnMob(EntityType type, Location loc, List<EnumAbilities> abilities, InfernalSpawnReason reason) {
         return spawnMob(type, loc, abilities, null, reason);
     }
@@ -66,7 +69,9 @@ public class MobManager {
         double baseHealth = ent.getHealth();
         double newHealth;
 
-        if (ConfigReader.isHealthByPower()) {
+        if (ConfigReader.isHealthByConfig()){
+            newHealth = ConfigReader.getLevelConfig().getHealth(baseHealth, ev.mob.getMobLevel(), ev.reason);
+        }else if (ConfigReader.isHealthByPower()) {
             newHealth = baseHealth * ev.mob.getMobLevel();
         } else if (ConfigReader.isHealthByDistance()) {
             double mobDistance = ent.getWorld().getSpawnLocation().distance(ent.getLocation());
@@ -83,7 +88,9 @@ public class MobManager {
         }
     }
 
-    /** Give infernal mobs names when they are spawned */
+    /**
+     * Give infernal mobs names when they are spawned
+     */
     public static void setInfernalMobName(InfernalMobSpawnEvent ev) {
         LivingEntity e = ev.mobEntity;
         if (ConfigReader.isInfernalMobHasNameTag()) {
@@ -94,7 +101,9 @@ public class MobManager {
         }
     }
 
-    /** Infernal Mob's name. Based on entity type and level */
+    /**
+     * Infernal Mob's name. Based on entity type and level
+     */
     public static String getMobNameTag(EntityType type, List<EnumAbilities> abilities) {
         String tag = ConfigReader.getMobNameTag();
         tag = tag.replace("<mobName>", type.name())
@@ -105,7 +114,9 @@ public class MobManager {
         return tag;
     }
 
-    /** "mama thief ..." */
+    /**
+     * "mama thief ..."
+     */
     public static String getHumanReadableAbilityString(List<EnumAbilities> abilities, int maxAbility, int maxLength) {
         if (abilities.size() <= 0) return "";
         maxLength -= 3;
@@ -116,9 +127,9 @@ public class MobManager {
             count += 1;
             if (len > maxLength) break;
         }
-        if (len > maxLength) count --;
+        if (len > maxLength) count--;
         String ret = abilities.get(0).name().toLowerCase();
-        for (int i=1;i<count;i++) {
+        for (int i = 1; i < count; i++) {
             ret += " " + abilities.get(i).name().toLowerCase();
         }
         if (count < abilities.size()) ret += " ...";
@@ -129,7 +140,7 @@ public class MobManager {
      * Change the given entity into infernal mob
      * may need to be called delayed
      *
-     * @param mobEntity     the entity
+     * @param mobEntity the entity
      */
     public void infernalNaturalSpawn(LivingEntity mobEntity) {
         if (mobEntity.isDead() || !mobEntity.isValid() || mobEntity.getCustomName() != null) return;
@@ -208,12 +219,16 @@ public class MobManager {
 
     public static int getInfernalLevelForLocation(Location loc) {
         int level;
-        if (ConfigReader.isSpawnedLevelByDistance()) {
-            Location spLoc = loc.getWorld().getSpawnLocation();
-            double dist = (loc.getX() - spLoc.getX()) * (loc.getX() - spLoc.getX());
-            dist += (loc.getZ() - spLoc.getZ()) * (loc.getZ() - spLoc.getZ());
+        Location spawnLocation = loc.getWorld().getSpawnLocation();
+        if (ConfigReader.isSpawnedByConfig()) {
+            double distance = spawnLocation.distance(loc);
+            LevelConfig levelConfig = ConfigReader.getLevelConfig();
+            level = levelConfig.getLevel(distance);
+        } else if (ConfigReader.isSpawnedLevelByDistance()) {
+            double dist = (loc.getX() - spawnLocation.getX()) * (loc.getX() - spawnLocation.getX());
+            dist += (loc.getZ() - spawnLocation.getZ()) * (loc.getZ() - spawnLocation.getZ());
             dist = Math.sqrt(dist);
-            level = (int)Math.ceil(dist / ConfigReader.getSpawnDistancePerLevel());
+            level = (int) Math.ceil(dist / ConfigReader.getSpawnDistancePerLevel());
         } else {
             level = Helper.rand(ConfigReader.getMinimalLevel(), ConfigReader.getMaximumLevel());
         }
@@ -296,6 +311,7 @@ public class MobManager {
         final LivingEntity g = mobEntity;
         new BukkitRunnable() {
             private boolean cancelled = false;
+
             @Override
             public void run() {
                 if (cancelled) return;
