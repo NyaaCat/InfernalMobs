@@ -73,6 +73,7 @@ public class InfernalMobs extends JavaPlugin {
         // update scoreboard
         for (Player p : Bukkit.getOnlinePlayers()) {
             GUI.refreshPlayerScoreboard(p);
+            GUI.refreshBossBar(p);
             BossBarManager.updateBar();
         }
 

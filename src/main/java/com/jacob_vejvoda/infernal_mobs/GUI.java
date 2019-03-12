@@ -31,6 +31,21 @@ public class GUI implements Listener {
         return InfernalMobs.instance;
     }
 
+    public static void refreshBossBar(Player p){
+        /*
+          todo: select a specified amount of mobs near players.
+            The amount is controlled by config file.
+         */
+        if (!ConfigReader.isBossbarEnabled()){
+            return;
+        }
+        Set<Entity> nearbyInfMobs = p.getNearbyEntities(GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE).stream()
+                .filter(entity -> entity instanceof LivingEntity && getPlugin().mobManager.mobMap.get(entity.getUniqueId()) != null)
+                .collect(Collectors.toSet());
+
+        BossBarManager.registerNearbyBossBar(p, nearbyInfMobs);
+    }
+
     public static void refreshPlayerScoreboard(Player p) {
         // actually, update scoreboards for mobs around the player
         if (!ConfigReader.isScoreboardEnabled()) {
@@ -44,17 +59,6 @@ public class GUI implements Listener {
         Mob mob = null;
         LivingEntity mobEntity = null;
         double minAngle = Math.PI / 2D;
-
-        /*
-          todo: select a specified amount of mobs near players.
-            The amount is controlled by config file.
-         */
-
-        Set<Entity> nearbyInfMobs = p.getNearbyEntities(GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE).stream()
-                .filter(entity -> entity instanceof LivingEntity && getPlugin().mobManager.mobMap.get(entity.getUniqueId()) != null)
-                .collect(Collectors.toSet());
-
-        BossBarManager.registerNearbyBossBar(p, nearbyInfMobs);
 
         for (Entity e : p.getNearbyEntities(GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE)) {
             if (!(e instanceof LivingEntity)) continue;

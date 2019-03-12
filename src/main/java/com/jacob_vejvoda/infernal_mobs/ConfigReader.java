@@ -285,4 +285,6 @@ public class ConfigReader {
     public static boolean isDeathMessageBroadcastAllWorld() {
         return cfg().getBoolean("broadcastToAllWorld", false);
     }
+
+    public static boolean isBossbarEnabled(){return cfg().getBoolean("bossBarEnabled", true);}
 }
