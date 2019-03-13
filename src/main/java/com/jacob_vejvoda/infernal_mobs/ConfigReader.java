@@ -289,8 +289,8 @@ public class ConfigReader {
         return cfg().getBoolean("broadcastToAllWorld", false);
     }
 
-    public static boolean isSpawnedByConfig() {
-        return cfg().getBoolean("configSpawn", false);
+    public static boolean isEnhanceEnabled() {
+        return cfg().getBoolean("configEnhance", false);
     }
 
     public static LevelConfig getLevelConfig() {
@@ -303,7 +303,4 @@ public class ConfigReader {
         return levelConfig;
     }
 
-    public static boolean isHealthByConfig() {
-        return cfg().getBoolean("configSpawn");
-    }
 }

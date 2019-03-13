@@ -69,7 +69,7 @@ public class MobManager {
         double baseHealth = ent.getHealth();
         double newHealth;
 
-        if (ConfigReader.isHealthByConfig()){
+        if (ConfigReader.isEnhanceEnabled()){
             newHealth = ConfigReader.getLevelConfig().getHealth(baseHealth, ev.mob.getMobLevel(), ev.reason);
         }else if (ConfigReader.isHealthByPower()) {
             newHealth = baseHealth * ev.mob.getMobLevel();
@@ -220,7 +220,7 @@ public class MobManager {
     public static int getInfernalLevelForLocation(Location loc) {
         int level;
         Location spawnLocation = loc.getWorld().getSpawnLocation();
-        if (ConfigReader.isSpawnedByConfig()) {
+        if (ConfigReader.isEnhanceEnabled()) {
             double distance = spawnLocation.distance(loc);
             LevelConfig levelConfig = ConfigReader.getLevelConfig();
             level = levelConfig.getLevel(distance);

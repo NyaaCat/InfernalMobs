@@ -2,6 +2,7 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import cat.nyaa.nyaacore.Message;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -62,7 +63,7 @@ public class EventListener implements Listener {
         if (this.plugin.mobManager.mobMap.containsKey(mob.getUniqueId())) {
             for (final Entity entity : mob.getNearbyEntities(64.0, 64.0, 64.0)) {
                 if (entity instanceof Player) {
-                    GUI.refreshPlayerScoreboard((Player)entity);
+                    GUI.refreshPlayerScoreboard((Player) entity);
                 }
             }
         }
@@ -98,20 +99,33 @@ public class EventListener implements Listener {
         if (plugin.mobManager.mobMap.containsKey(trueVictim.getUniqueId())) {
             // something attacked infernal mob
             if (!(trueAttacker instanceof Player)) return;
-            if (((Player) trueAttacker).getGameMode() == GameMode.CREATIVE) return;
             Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
-            for (EnumAbilities ab : mob.abilityList) {
-                ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
+            if (((Player) trueAttacker).getGameMode() != GameMode.CREATIVE) {
+                for (EnumAbilities ab : mob.abilityList) {
+                    ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
+                }
+            }
+            if (ConfigReader.isEnhanceEnabled()){
+                double resistedDamage = ConfigReader.getLevelConfig().calcResistedDamage(event.getDamage(), mob.getMobLevel());
+                event.setDamage(resistedDamage);
             }
         }
 
         if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
             // infernal mob attacked something
+            double originDamage = event.getDamage();
             if (!(trueVictim instanceof Player)) return;
             if (((Player) trueVictim).getGameMode() == GameMode.CREATIVE) return;
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
             for (EnumAbilities ab : mob.abilityList) {
                 ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+            }
+            double extraDamage = event.getDamage() - originDamage;
+            if (ConfigReader.isEnhanceEnabled()) {
+                LevelConfig levelConfig = ConfigReader.getLevelConfig();
+                double damage = levelConfig.getDamage(originDamage, mob.getMobLevel());
+                damage += extraDamage;
+                event.setDamage(damage);
             }
         }
     }
@@ -126,7 +140,7 @@ public class EventListener implements Listener {
         if (!ConfigReader.isEnabledMobType(e.getType())) return;
         if (e.getLocation().getY() < ConfigReader.getNaturalSpawnMinHeight()) return;
         if (!ConfigReader.getEnabledSpawnReasons().contains(event.getSpawnReason())) return;
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
                 plugin.mobManager.infernalNaturalSpawn(e);
@@ -157,7 +171,7 @@ public class EventListener implements Listener {
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
-        if (determineShouldDrop(killer != null, (killer!=null) && (killer.getGameMode()==GameMode.CREATIVE))) {
+        if (determineShouldDrop(killer != null, (killer != null) && (killer.getGameMode() == GameMode.CREATIVE))) {
             ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
             if (drop != null && drop.getType() != Material.AIR) {
                 final int min = 1;
@@ -171,9 +185,14 @@ public class EventListener implements Listener {
         }
 
         // set xp drop
-        final int xpm = ConfigReader.getXpMultiplier();
-        final int xp = event.getDroppedExp() * xpm;
-        event.setDroppedExp(xp);
+        if (ConfigReader.isEnhanceEnabled()) {
+            int xp = ConfigReader.getLevelConfig().getExp(event.getDroppedExp(), mob.getMobLevel());
+            event.setDroppedExp(xp);
+        } else {
+            final int xpm = ConfigReader.getXpMultiplier();
+            final int xp = event.getDroppedExp() * xpm;
+            event.setDroppedExp(xp);
+        }
 
         // broadcast death message TODO use ConfigReader
         if (ConfigReader.isMobDeathMessageEnabled() && event.getEntity().getKiller() != null) {
