@@ -5,20 +5,21 @@ import cat.nyaa.nyaacore.configuration.ISerializable;
 import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.logging.Level;
 
 import static java.util.logging.Level.WARNING;
 
 public class LevelConfig extends FileConfigure {
 
     @Serializable(name = "level")
-    List<Level> levelMap;
-    @Serializable(name = "mobConfig")
-    List<MobConfig> mobConfig;
+    Map<String, SpawnConfig> spawnConfig;
 
     @Override
     protected String getFileName() {
@@ -31,43 +32,48 @@ public class LevelConfig extends FileConfigure {
     }
 
     public int getLevel(double distance) {
-        List<Level> result = new ArrayList<>();
-        if (levelMap.isEmpty()) {
+        try {
+            List<SpawnConfig> result = new ArrayList<>();
+            if (spawnConfig.isEmpty()) {
+                return 1;
+            }
+            spawnConfig.forEach((k, v) -> {
+                if (inRange(v, distance)) {
+                    result.add(v);
+                }
+            });
+            if (!result.isEmpty()) {
+                return getLevelByWeight(result);
+            } else return -1;
+        } catch (Exception e) {
+            getPlugin().getLogger().log(WARNING, "exception during calculating distance", e);
             return 1;
         }
-        levelMap.forEach(level -> {
-            if (inRange(level, distance)) {
-                result.add(level);
-            }
-        });
-        return getLevelByWeight(result);
     }
 
-    private static int getLevelByWeight(List<LevelConfig.Level> possibleLevel) {
-        double sum = possibleLevel.stream().mapToDouble(level -> level.spawnWeight).sum();
+    private static int getLevelByWeight(List<SpawnConfig> possibleLevel) {
+        double sum = possibleLevel.stream().mapToDouble(level -> level.getSpawnWeight()).sum();
         double rand = Helper.rand(0, sum);
         int current = 0;
         for (int i = 0; i < possibleLevel.size(); i++) {
-            LevelConfig.Level level = possibleLevel.get(i);
-            int weight = level.spawnWeight;
+            SpawnConfig level = possibleLevel.get(i);
+            int weight = level.getSpawnWeight();
             if (rand >= current && rand < current + weight) {
-                return level.level;
+                return level.getLevel();
             } else current += weight;
         }
-        return possibleLevel.get(possibleLevel.size() - 1).level;
+        return possibleLevel.get(possibleLevel.size() - 1).getLevel();
     }
 
     public double getHealth(double baseHealth, int mobLevel, InfernalSpawnReason reason) {
         double result = baseHealth;
         try {
-            if (!mobConfig.isEmpty()) {
-                MobConfig levelConf = getLevelConf(mobLevel);
-                //todo check level config on load
-                if (levelConf != null) {
-                    result = levelConf.health;
-                    if (reason.equals(InfernalSpawnReason.MAMA)) {
-                        result *= levelConf.babyMutiplier;
-                    }
+            SpawnConfig levelConf = getLevelConf(mobLevel);
+            //todo check level config on load
+            if (levelConf != null) {
+                result = levelConf.getHealth();
+                if (reason.equals(InfernalSpawnReason.MAMA)) {
+                    result *= levelConf.getBabyMultiplier();
                 }
             }
         } catch (Exception e) {
@@ -77,76 +83,82 @@ public class LevelConfig extends FileConfigure {
         return result;
     }
 
-    private boolean inRange(Level level, double distance) {
-        int from = Math.min(level.fromDistance, level.toDistance);
-        int to = Math.max(level.fromDistance, level.toDistance);
+    private boolean inRange(SpawnConfig level, double distance) {
+        int from = Math.min(level.getFrom(), level.getTo());
+        int to = Math.max(level.getFrom(), level.getTo());
         return distance > from && distance < to;
-    }
-
-    private MobConfig getLevelConf(int mobLevel) {
-        List<MobConfig> levelConf = mobConfig.stream().filter(mobConfig1 -> mobConfig1.level == mobLevel).limit(1).collect(Collectors.toList());
-        return levelConf.get(0);
     }
 
     public int getExp(int baseXp, int mobLevel) {
         int xp = baseXp;
-        MobConfig mobConfig1 = getLevelConf(mobLevel);
-        if (mobConfig1 != null && mobConfig1.level == mobLevel) {
-            xp = mobConfig1.exp;
+        try {
+            SpawnConfig levelConf = getLevelConf(mobLevel);
+            xp = levelConf.getExp();
+        } catch (Exception e) {
+            getPlugin().getLogger().log(WARNING, "exception during reading config for level " + mobLevel, e);
+            xp = baseXp;
         }
-
         return xp;
     }
 
     public double getDamage(double originalDamage, int mobLevel) {
         double damage = originalDamage;
-        for (MobConfig mc :
-                mobConfig) {
-            if (mc.level == mobLevel) {
-                damage = mc.damage;
-                break;
+        try {
+            for (Object o : spawnConfig.values()) {
+                SpawnConfig cfg = new SpawnConfig((Map<String, Object>) o);
+                if (cfg.getLevel() == mobLevel) {
+                    damage = cfg.getDamage();
+                    break;
+                }
             }
+        } catch (Exception e) {
+            getPlugin().getLogger().log(WARNING, "exception during reading config for level " + mobLevel, e);
+            damage = originalDamage;
         }
         return damage;
     }
 
     public double calcResistedDamage(double originDamage, int mobLevel) {
         double damage = originDamage;
-        MobConfig levelConf = getLevelConf(mobLevel);
-        if (levelConf != null) {
-            double damageResist = levelConf.damageResist;
-            if (damageResist >= 100) {
-                damage = 0;
-            } else {
-                damage = ((damageResist / 100d) + 1d) * damage;
+        try {
+            SpawnConfig levelConf = getLevelConf(mobLevel);
+            if (levelConf != null) {
+                double damageResist = levelConf.getDamageResist();
+                if (damageResist >= 100) {
+                    damage = 0;
+                } else {
+                    damage = (1 - (damageResist / 100d)) * damage;
+                }
             }
+        } catch (Exception e) {
+            getPlugin().getLogger().log(WARNING, "exception during reading config for level " + mobLevel, e);
+            damage = originDamage;
         }
         return damage;
     }
 
-    public static class Level implements ISerializable {
-        @Serializable
-        public int fromDistance;
-        @Serializable
-        public int toDistance;
-        @Serializable
-        public int level = 1;
-        @Serializable
-        public int spawnWeight;
+    private SpawnConfig getLevelConf(int mobLevel) {
+        for (Map.Entry<String, SpawnConfig> entry : spawnConfig.entrySet()) {
+//            Object v = entry.getValue();
+//            SpawnConfig cfg = new SpawnConfig((Map<String, Object>) v);
+            SpawnConfig cfg = entry.getValue();
+            if (cfg.getLevel() == mobLevel) {
+                return cfg;
+            }
+        }
+        return null;
     }
 
-    private class MobConfig {
-        @Serializable
-        public int level;
-        @Serializable
-        public int health;
-        @Serializable
-        public int exp;
-        @Serializable
-        public int damage;
-        @Serializable(name = "damage_resist")
-        public double damageResist;
-        @Serializable(name = "baby_multiplier")
-        public double babyMutiplier;
+    public boolean isInRange(Location location) {
+        double distance = location.getWorld().getSpawnLocation().distance(location);
+        boolean inRange = false;
+        for (SpawnConfig sc :
+                spawnConfig.values()) {
+            if (inRange(sc, distance)){
+                inRange = true;
+                break;
+            }
+        }
+         return inRange;
     }
 }

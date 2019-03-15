@@ -118,7 +118,7 @@ public class CommandHandler implements CommandExecutor {
                     } else {
                         normalize(m).entrySet().stream()
                                 .sorted((a,b)->a.getKey().compareTo(b.getKey()))
-                                .forEach(e->sender.sendMessage(String.format("  Level%2d: %.03f%%", e.getKey(), e.getValue()*100D)));
+                                .forEach(e->sender.sendMessage(String.format("  SpawnConfig%2d: %.03f%%", e.getKey(), e.getValue()*100D)));
                     }
                 }
             } else if ("setdrop".equalsIgnoreCase(subcommand)) {

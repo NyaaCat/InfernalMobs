@@ -38,12 +38,12 @@ public class LootConfig {
 
     public LootItem getRandomDrop(int level) {
         if (!dropMap.containsKey(level)) {
-            InfernalMobs.instance.getLogger().warning("No drop found for Level: " + level);
+            InfernalMobs.instance.getLogger().warning("No drop found for SpawnConfig: " + level);
             return null;
         }
         String name = weightedRandom(dropMap.get(level));
         if (name == null) {
-            InfernalMobs.instance.getLogger().warning("No drop found for Level: " + level);
+            InfernalMobs.instance.getLogger().warning("No drop found for SpawnConfig: " + level);
             return null;
         }
         LootItem item = lootItems.get(name);

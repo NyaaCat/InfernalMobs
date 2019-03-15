@@ -150,6 +150,7 @@ public class MobManager {
         UUID parentId = mamaSpawned.getIfPresent(id);
         if (unnaturallySpawned.getIfPresent(id) != null) return;
         if (!Helper.possibility(ConfigReader.getInfernalNaturalSpawningPercentage())) return;
+        if (!ConfigReader.getLevelConfig().isInRange(mobEntity.getLocation()))return;
 
         List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
         if (abilities == null || abilities.size() <= 0) return;
@@ -224,15 +225,24 @@ public class MobManager {
             double distance = spawnLocation.distance(loc);
             LevelConfig levelConfig = ConfigReader.getLevelConfig();
             level = levelConfig.getLevel(distance);
+            if (level == -1){
+                level = getLevelByDistance(loc, spawnLocation);
+            }
         } else if (ConfigReader.isSpawnedLevelByDistance()) {
-            double dist = (loc.getX() - spawnLocation.getX()) * (loc.getX() - spawnLocation.getX());
-            dist += (loc.getZ() - spawnLocation.getZ()) * (loc.getZ() - spawnLocation.getZ());
-            dist = Math.sqrt(dist);
-            level = (int) Math.ceil(dist / ConfigReader.getSpawnDistancePerLevel());
+            level = getLevelByDistance(loc, spawnLocation);
         } else {
             level = Helper.rand(ConfigReader.getMinimalLevel(), ConfigReader.getMaximumLevel());
         }
         if (level <= 0) level = 1;
+        return level;
+    }
+
+    private static int getLevelByDistance(Location loc, Location spawnLocation) {
+        int level;
+        double dist = (loc.getX() - spawnLocation.getX()) * (loc.getX() - spawnLocation.getX());
+        dist += (loc.getZ() - spawnLocation.getZ()) * (loc.getZ() - spawnLocation.getZ());
+        dist = Math.sqrt(dist);
+        level = (int) Math.ceil(dist / ConfigReader.getSpawnDistancePerLevel());
         return level;
     }
 
