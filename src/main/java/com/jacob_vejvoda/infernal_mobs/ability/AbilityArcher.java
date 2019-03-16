@@ -20,7 +20,8 @@ public class AbilityArcher implements IAbility {
         for (Entity e : mobEntity.getNearbyEntities(16, 16,16)) {
             if (!(e instanceof Player)) continue;
             Player p = (Player) e;
-            if (p.getGameMode() == GameMode.CREATIVE) return;
+            GameMode gameMode = p.getGameMode();
+            if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
             if (mobEntity.hasLineOfSight(p)) candidates.add(p);
         }
         Player victim = Helper.randomItem(candidates);

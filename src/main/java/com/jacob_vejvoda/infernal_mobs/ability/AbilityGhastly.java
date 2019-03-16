@@ -20,7 +20,7 @@ public class AbilityGhastly implements IAbility {
         Location mobLoc = mobEntity.getLocation();
         List<Player> players = mobLoc.getWorld().getPlayers().stream()
                 .filter(p -> p.getLocation().distanceSquared(mobLoc) <= EFFECTIVE_RANGE_SQUARED)
-                .filter(p -> p.getGameMode() != GameMode.CREATIVE)
+                .filter(p -> p.getGameMode() != GameMode.CREATIVE && p.getGameMode() != GameMode.SPECTATOR)
                 .collect(Collectors.toList());
         Player victim = Helper.randomItem(players);
         if (victim == null) return;

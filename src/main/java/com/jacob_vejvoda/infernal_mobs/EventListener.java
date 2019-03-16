@@ -102,7 +102,8 @@ public class EventListener implements Listener {
             // something attacked infernal mob
             if (!(trueAttacker instanceof Player)) return;
             Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
-            if (((Player) trueAttacker).getGameMode() != GameMode.CREATIVE) {
+            GameMode gameMode = ((Player) trueAttacker).getGameMode();
+            if (gameMode != GameMode.CREATIVE && gameMode != GameMode.SPECTATOR) {
                 for (EnumAbilities ab : mob.abilityList) {
                     ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
                 }
@@ -117,7 +118,8 @@ public class EventListener implements Listener {
             // infernal mob attacked something
             double originDamage = event.getDamage();
             if (!(trueVictim instanceof Player)) return;
-            if (((Player) trueVictim).getGameMode() == GameMode.CREATIVE) return;
+            GameMode gameMode = ((Player) trueVictim).getGameMode();
+            if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
             for (EnumAbilities ab : mob.abilityList) {
                 ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
@@ -173,7 +175,8 @@ public class EventListener implements Listener {
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
-        if (determineShouldDrop(killer != null, (killer != null) && (killer.getGameMode() == GameMode.CREATIVE))) {
+        GameMode gameMode = killer.getGameMode();
+        if (determineShouldDrop(killer != null, (killer != null) && (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR))) {
             ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
             if (drop != null && drop.getType() != Material.AIR) {
                 final int min = 1;
