@@ -11,20 +11,26 @@ public class Mob {
     public UUID entityId;
     public int lives;
     public ParticleEffect particleEffect;
+    public int level;
     public List<EnumAbilities> abilityList;
     public int maxMamaInfernal = 0;
 
-    public Mob(UUID entityId, int lives, ParticleEffect particleEffect, List<EnumAbilities> abilityList) {
+    public Mob(UUID entityId, int lives, ParticleEffect particleEffect, int level, List<EnumAbilities> abilityList){
         this.entityId = entityId;
         this.lives = lives;
         this.particleEffect = particleEffect;
         this.abilityList = abilityList;
+        this.level = level;
         if (abilityList.contains(EnumAbilities.MAMA)) {
             this.maxMamaInfernal = Helper.rand(1, abilityList.size());
         }
     }
 
+    public Mob(UUID entityId, int lives, ParticleEffect particleEffect, List<EnumAbilities> abilityList) {
+        this(entityId, lives, particleEffect, abilityList.size(), abilityList);
+    }
+
     public int getMobLevel() {
-        return abilityList.size();
+        return level;
     }
 }

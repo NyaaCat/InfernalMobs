@@ -69,9 +69,9 @@ public class MobManager {
         double baseHealth = ent.getHealth();
         double newHealth;
 
-        if (ConfigReader.isEnhanceEnabled()){
+        if (ConfigReader.isEnhanceEnabled()) {
             newHealth = ConfigReader.getLevelConfig().getHealth(baseHealth, ev.mob.getMobLevel(), ev.reason);
-        }else if (ConfigReader.isHealthByPower()) {
+        } else if (ConfigReader.isHealthByPower()) {
             newHealth = baseHealth * ev.mob.getMobLevel();
         } else if (ConfigReader.isHealthByDistance()) {
             double mobDistance = ent.getWorld().getSpawnLocation().distance(ent.getLocation());
@@ -94,7 +94,7 @@ public class MobManager {
     public static void setInfernalMobName(InfernalMobSpawnEvent ev) {
         LivingEntity e = ev.mobEntity;
         if (ConfigReader.isInfernalMobHasNameTag()) {
-            String nameTag = getMobNameTag(e.getType(), ev.mob.abilityList);
+            String nameTag = getMobNameTag(ev, ev.mob.abilityList);
             e.setCustomName(nameTag);
             if (ConfigReader.isInfernalMobNameTagAlwaysVisible())
                 e.setCustomNameVisible(true);
@@ -104,12 +104,12 @@ public class MobManager {
     /**
      * Infernal Mob's name. Based on entity type and level
      */
-    public static String getMobNameTag(EntityType type, List<EnumAbilities> abilities) {
+    public static String getMobNameTag(InfernalMobSpawnEvent type, List<EnumAbilities> abilities) {
         String tag = ConfigReader.getMobNameTag();
-        tag = tag.replace("<mobName>", type.name())
-                .replace("<mobLevel>", Integer.toString(abilities.size()))
+        tag = tag.replace("<mobName>", type.mobEntity.getType().name())
+                .replace("<mobLevel>", Integer.toString(type.mob.level)
                 .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32))
-                .replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(abilities.size()));
+                .replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(type.mob.level)));
         tag = ChatColor.translateAlternateColorCodes('&', tag);
         return tag;
     }
@@ -150,9 +150,10 @@ public class MobManager {
         UUID parentId = mamaSpawned.getIfPresent(id);
         if (unnaturallySpawned.getIfPresent(id) != null) return;
         if (!Helper.possibility(ConfigReader.getInfernalNaturalSpawningPercentage())) return;
-        if (!ConfigReader.getLevelConfig().isInRange(mobEntity.getLocation()))return;
+        if (!ConfigReader.getLevelConfig().isInRange(mobEntity.getLocation())) return;
 
-        List<EnumAbilities> abilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), getInfernalLevelForLocation(mobEntity.getLocation()));
+        int level = getInfernalLevelForLocation(mobEntity.getLocation());
+        List<EnumAbilities> abilities = getAbilities(level);
         if (abilities == null || abilities.size() <= 0) return;
         if (parentId != null) {
             if (!mobMap.containsKey(parentId) || mobMap.get(parentId).maxMamaInfernal <= 0) {
@@ -168,7 +169,7 @@ public class MobManager {
         }
         // setup infernal mob
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
-        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), abilities);
+        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(),level ,abilities);
 
         InfernalMobSpawnEvent spwanEvent;
         if (parentId != null) {
@@ -208,6 +209,19 @@ public class MobManager {
 
     }
 
+    private List<EnumAbilities> getAbilities(int level) {
+        List<EnumAbilities> enumAbilities = null;
+        if (ConfigReader.isEnhanceEnabled()) {
+            LevelConfig levelConfig = ConfigReader.getLevelConfig();
+            enumAbilities = levelConfig.getAbilitiyList(level);
+        }
+        if (enumAbilities == null) {
+            enumAbilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), level);
+        }
+
+        return enumAbilities;
+    }
+
     /**
      * Returns false only when the Entity is a baby AND is disabled in config
      */
@@ -225,7 +239,7 @@ public class MobManager {
             double distance = spawnLocation.distance(loc);
             LevelConfig levelConfig = ConfigReader.getLevelConfig();
             level = levelConfig.getLevel(distance);
-            if (level == -1){
+            if (level == -1) {
                 level = getLevelByDistance(loc, spawnLocation);
             }
         } else if (ConfigReader.isSpawnedLevelByDistance()) {

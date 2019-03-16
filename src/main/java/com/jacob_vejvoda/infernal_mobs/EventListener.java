@@ -83,6 +83,7 @@ public class EventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityAttack(final EntityDamageByEntityEvent event) {
+        //todo unexpected fireball damage
         boolean isDirectAttack = true;
         Entity trueVictim = event.getEntity();
         Entity trueAttacker = event.getDamager();

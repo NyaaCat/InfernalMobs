@@ -1,0 +1,31 @@
+level:
+  level-1:
+    __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig
+    level: 1
+    attr:
+      __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig$Attr
+      health: 50
+      damage: 5
+      damageResist: 0
+      exp: 5
+      baby: 1.0
+    spawn:
+      __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig$Range
+      from: 100
+      to: 3000
+      weight: 1
+  level-2:
+    __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig
+    level: 2
+    attr:
+      __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig$Attr
+      health: 100
+      damage: 10
+      damageResist: 0
+      exp: 10
+      baby: 1.0
+    spawn:
+      __class__: com.jacob_vejvoda.infernal_mobs.config.SpawnConfig$Range
+      from: 280
+      to: 3000
+      weight: 2

@@ -4,6 +4,7 @@ import cat.nyaa.nyaacore.configuration.FileConfigure;
 import cat.nyaa.nyaacore.configuration.ISerializable;
 import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
+import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -20,6 +21,9 @@ public class LevelConfig extends FileConfigure {
 
     @Serializable(name = "level")
     Map<String, SpawnConfig> spawnConfig;
+
+    @StandaloneConfig
+    AbilityConfig abilityConfig = new AbilityConfig();
 
     @Override
     protected String getFileName() {
@@ -159,5 +163,13 @@ public class LevelConfig extends FileConfigure {
             }
         }
          return inRange;
+    }
+
+    public List<EnumAbilities> getAbilitiyList(int level) {
+        List<EnumAbilities> result = abilityConfig.getConfigFor(level);
+        if (result.isEmpty()){
+            getPlugin().getLogger().log(WARNING, "no ability for level "+level);
+        }
+        return result;
     }
 }

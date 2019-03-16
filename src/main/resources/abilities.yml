@@ -1,0 +1,7 @@
+abilities:
+  sprint:
+    enabled: true
+    levels:
+      - 1
+      - 2
+      - 10-12
