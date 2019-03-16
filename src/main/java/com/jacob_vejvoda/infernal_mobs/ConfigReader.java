@@ -289,6 +289,8 @@ public class ConfigReader {
         return cfg().getBoolean("broadcastToAllWorld", false);
     }
 
+    public static boolean isBossbarEnabled(){return cfg().getBoolean("bossBarEnabled", true);}
+
     public static boolean isEnhanceEnabled() {
         return cfg().getBoolean("configEnhance", false);
     }

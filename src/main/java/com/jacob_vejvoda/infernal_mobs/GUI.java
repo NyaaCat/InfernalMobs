@@ -14,9 +14,8 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * BossBar support removed.
@@ -26,9 +25,25 @@ public class GUI implements Listener {
     public static final int GUI_SCAN_DISTANCE = 26;
     private static final String OBJECTIVE_NAME_INFO = "im_info";
     private final static Map<UUID, Scoreboard> mobScoreboard = new HashMap<>();
+    private final static BossBarManager barManager = new BossBarManager();
 
     private static InfernalMobs getPlugin() {
         return InfernalMobs.instance;
+    }
+
+    public static void refreshBossBar(Player p){
+        /*
+          todo: select a specified amount of mobs near players.
+            The amount is controlled by config file.
+         */
+        if (!ConfigReader.isBossbarEnabled()){
+            return;
+        }
+        Set<Entity> nearbyInfMobs = p.getNearbyEntities(GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE).stream()
+                .filter(entity -> entity instanceof LivingEntity && getPlugin().mobManager.mobMap.get(entity.getUniqueId()) != null)
+                .collect(Collectors.toSet());
+
+        BossBarManager.registerNearbyBossBar(p, nearbyInfMobs);
     }
 
     public static void refreshPlayerScoreboard(Player p) {
@@ -43,12 +58,13 @@ public class GUI implements Listener {
         // Select mob
         Mob mob = null;
         LivingEntity mobEntity = null;
-        double minAngle = Math.PI/2D;
+        double minAngle = Math.PI / 2D;
+
         for (Entity e : p.getNearbyEntities(GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE, GUI_SCAN_DISTANCE)) {
             if (!(e instanceof LivingEntity)) continue;
             Mob currentMob = getPlugin().mobManager.mobMap.get(e.getUniqueId());
             if (currentMob == null) continue;
-            LivingEntity currentMobEntity = (LivingEntity)e;
+            LivingEntity currentMobEntity = (LivingEntity) e;
             Vector eyeSight = p.getEyeLocation().getDirection();
             Vector mobVector = currentMobEntity.getEyeLocation().toVector().subtract(p.getEyeLocation().toVector());
             double angle = Helper.getVectorAngle(eyeSight, mobVector);

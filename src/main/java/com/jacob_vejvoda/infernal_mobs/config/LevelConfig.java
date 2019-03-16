@@ -104,8 +104,7 @@ public class LevelConfig extends FileConfigure {
     public double getDamage(double originalDamage, int mobLevel) {
         double damage = originalDamage;
         try {
-            for (Object o : spawnConfig.values()) {
-                SpawnConfig cfg = new SpawnConfig((Map<String, Object>) o);
+            for (SpawnConfig cfg : spawnConfig.values()) {
                 if (cfg.getLevel() == mobLevel) {
                     damage = cfg.getDamage();
                     break;

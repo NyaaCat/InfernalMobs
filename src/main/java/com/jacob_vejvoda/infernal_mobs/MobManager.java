@@ -306,7 +306,6 @@ public class MobManager {
             m.setDisplayName(ChatColor.WHITE + "Ghost Head");
             head.setItemMeta(m);
         }
-
         mobEntity.getEquipment().setHelmet(head);
         mobEntity.getEquipment().setChestplate(chest);
         mobEntity.getEquipment().setHelmetDropChance(0);
