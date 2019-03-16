@@ -108,8 +108,8 @@ public class MobManager {
         String tag = ConfigReader.getMobNameTag();
         tag = tag.replace("<mobName>", type.mobEntity.getType().name())
                 .replace("<mobLevel>", Integer.toString(type.mob.level)
-                .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32))
-                .replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(type.mob.level)));
+                .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32)));
+        tag = tag.replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(type.mob.level));
         tag = ChatColor.translateAlternateColorCodes('&', tag);
         return tag;
     }
