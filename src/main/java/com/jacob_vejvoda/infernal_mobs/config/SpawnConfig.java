@@ -15,13 +15,6 @@ public class SpawnConfig implements ISerializable{
     Range range;
 
     public SpawnConfig(){
-
-    }
-
-    SpawnConfig(Map<String, Object> v) {
-//        this.spawnConfig = v;
-//        attr = new Attr((Map<String, Object>) spawnConfig.get("attr"));
-//        range = new Range((Map<String, Object>) spawnConfig.get("spawn"));
     }
 
 

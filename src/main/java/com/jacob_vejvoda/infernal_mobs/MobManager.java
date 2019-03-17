@@ -213,7 +213,7 @@ public class MobManager {
         List<EnumAbilities> enumAbilities = null;
         if (ConfigReader.isEnhanceEnabled()) {
             LevelConfig levelConfig = ConfigReader.getLevelConfig();
-            enumAbilities = levelConfig.getAbilitiyList(level);
+            enumAbilities = Helper.randomNItems(levelConfig.getAbilitiyList(level),level);
         }
         if (enumAbilities == null) {
             enumAbilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), level);

@@ -52,6 +52,7 @@ public class CommandHandler implements CommandExecutor {
                 printHelp(sender);
             } else if ("reload".equalsIgnoreCase(subcommand)) {
                 plugin.reloadConfig();
+                ConfigReader.getLevelConfig().load();
                 plugin.reloadLoot();
                 sender.sendMessage("§eConfig reloaded!");
             } else if ("mobList".equalsIgnoreCase(subcommand)) {
