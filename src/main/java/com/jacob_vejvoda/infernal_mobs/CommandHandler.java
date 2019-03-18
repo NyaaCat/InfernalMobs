@@ -38,7 +38,7 @@ public class CommandHandler implements CommandExecutor {
     @Override
     public boolean onCommand(final CommandSender sender, final Command cmd, final String label, final String[] args) {
         if (!sender.hasPermission("infernal_mobs.commands")) {
-            sender.sendMessage("§cYou don't have permission to use this command!");
+            sender.sendMessage("You don't have permission to use this command!");
             return true;
         }
 
@@ -53,18 +53,18 @@ public class CommandHandler implements CommandExecutor {
             } else if ("reload".equalsIgnoreCase(subcommand)) {
                 plugin.reloadConfig();
                 plugin.reloadLoot();
-                sender.sendMessage("§eConfig reloaded!");
+                sender.sendMessage("Config reloaded!");
             } else if ("mobList".equalsIgnoreCase(subcommand)) {
-                sender.sendMessage("§6Mob List:");
+                sender.sendMessage("Mob List:");
                 for (EntityType t : EntityType.values()) {
-                    sender.sendMessage("§e" + t.name());
+                    sender.sendMessage(t.name());
                 }
             } else if ("error".equalsIgnoreCase(subcommand)) {
                 plugin.errorList.add(asPlayer(sender));
-                sender.sendMessage("§eClick on a mob to send an error report about it.");
+                sender.sendMessage("Click on a mob to send an error report about it.");
             } else if ("info".equalsIgnoreCase(subcommand)) {
-                sender.sendMessage("§eMounts: " + plugin.mobManager.mounteeMobs.size());
-                sender.sendMessage("§eInfernals: " + plugin.mobManager.mobMap.size());
+                sender.sendMessage("Mounts: " + plugin.mobManager.mounteeMobs.size());
+                sender.sendMessage("Infernals: " + plugin.mobManager.mobMap.size());
             } else if ("worldInfo".equalsIgnoreCase(subcommand)) {
                 final World world = asPlayer(sender).getWorld();
                 String enabled = ConfigReader.isEnabledWorld(world) ? "is" : "is not";
@@ -132,7 +132,7 @@ public class CommandHandler implements CommandExecutor {
                 String worldName = arg.nextString();
                 World w = plugin.getServer().getWorld(worldName);
                 if (w == null) {
-                    sender.sendMessage("§cWorld not found!");
+                    sender.sendMessage("World not found!");
                     return true;
                 }
                 for (Entity e : w.getEntities()) {
@@ -141,7 +141,7 @@ public class CommandHandler implements CommandExecutor {
                         e.remove();
                     }
                 }
-                sender.sendMessage("§eKilled all loaded infernal mobs in that world!");
+                sender.sendMessage("Killed all loaded infernal mobs in that world!");
             } else if ("kill".equalsIgnoreCase(subcommand)) {
                 int radius = arg.nextInt();
                 for (Entity e : asPlayer(sender).getNearbyEntities(radius, radius, radius)) {
@@ -150,7 +150,7 @@ public class CommandHandler implements CommandExecutor {
                         e.remove();
                     }
                 }
-                sender.sendMessage("§eKilled all infernal mobs near you!");
+                sender.sendMessage("Killed all infernal mobs near you!");
             } else if ("getloot".equalsIgnoreCase(subcommand)) {
                 if (arg.top() == null) {
                     Player player = asPlayer(sender);
@@ -158,14 +158,14 @@ public class CommandHandler implements CommandExecutor {
                     final ItemStack gottenLoot = plugin.lootManager.getRandomLoot(player, powers);
                     if (gottenLoot != null && gottenLoot.getType() != Material.AIR) {
                         player.getInventory().addItem(gottenLoot);
-                        sender.sendMessage("§eGave you some random loot!");
+                        sender.sendMessage("Gave you some random loot!");
                     }
                 } else {
                     String name = arg.nextString();
                     ItemStack i = plugin.lootManager.getLootByName(asPlayer(sender), name);
                     if (i != null && i.getType() != Material.AIR) {
                         asPlayer(sender).getInventory().addItem(i);
-                        sender.sendMessage("§eGave you the loot: " + name);
+                        sender.sendMessage("Gave you the loot");
                     }
                 }
             } else if ("spawn".equalsIgnoreCase(subcommand)) {
@@ -192,7 +192,7 @@ public class CommandHandler implements CommandExecutor {
                 String worldName = arg.nextString();
                 World w = plugin.getServer().getWorld(worldName);
                 if (w == null) {
-                    sender.sendMessage("§cWorld not found!");
+                    sender.sendMessage("World not found!");
                     return true;
                 }
                 double x = arg.nextDouble();
@@ -219,7 +219,7 @@ public class CommandHandler implements CommandExecutor {
                 String playerName = arg.nextString();
                 Player p = Bukkit.getPlayer(playerName);
                 if (p == null) {
-                    sender.sendMessage("§cPlayer not found: " + playerName);
+                    sender.sendMessage("Player not found: " + playerName);
                     return true;
                 }
                 Location loc = p.getLocation();
@@ -256,9 +256,9 @@ public class CommandHandler implements CommandExecutor {
 //                final int delay = Integer.parseInt(args[1]);
 //                Location loc = player.getTargetBlock((Set<Material>) null, 25).getLocation();
 //                plugin.persist.validInfernalSpawners.put(loc, delay);
-//                sender.sendMessage("§cSpawner set to infernal with a " + delay + " second delay!");
+//                sender.sendMessage("Spawner set to infernal with a " + delay + " second delay!");
 //            } else {
-//                sender.sendMessage("§cYou must be looking a spawner to make it infernal!");
+//                sender.sendMessage("You must be looking a spawner to make it infernal!");
 //            }
 //        }
     }
