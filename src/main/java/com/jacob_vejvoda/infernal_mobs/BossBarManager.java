@@ -111,6 +111,7 @@ public class BossBarManager {
                 });
             }
             players.clear();
+            bossBar.removeAll();
             bossBarMap.remove(mobEntity);
             barPlayerMap.remove(bossBar);
         });
