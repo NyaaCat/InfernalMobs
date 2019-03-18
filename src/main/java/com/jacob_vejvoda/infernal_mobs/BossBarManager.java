@@ -2,6 +2,7 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
@@ -97,6 +98,22 @@ public class BossBarManager {
     private static int getMaxBarCount() {
         //todo: read max bar count from config
         return 5;
+    }
+
+    public static void removeMob(Mob mob, LivingEntity mobEntity) {
+        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
+            BossBar bossBar = bossBarMap.get(mobEntity);
+            HashSet<Player> players = barPlayerMap.get(bossBar);
+            if (!players.isEmpty()){
+                players.forEach(player -> {
+                    HashSet<BossBar> bossBars = playerBarMap.get(player);
+                    bossBars.remove(bossBar);
+                });
+            }
+            players.clear();
+            bossBarMap.remove(mobEntity);
+            barPlayerMap.remove(bossBar);
+        });
     }
 
     static class AngledEntity implements Comparable<AngledEntity> {

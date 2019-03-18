@@ -275,7 +275,7 @@ public class EventListener implements Listener {
         }
 
         plugin.mobManager.mobMap.remove(id);
-
+        BossBarManager.removeMob(mob, mobEntity);
         // TODO event
     }
 
