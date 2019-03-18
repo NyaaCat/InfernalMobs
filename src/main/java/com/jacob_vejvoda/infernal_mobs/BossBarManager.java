@@ -112,6 +112,7 @@ public class BossBarManager {
             }
             players.clear();
             Bukkit.getScheduler().runTaskLater(InfernalMobs.instance, bossBar::removeAll, 20);
+            bossBar.setTitle(bossBar.getTitle().concat(ConfigReader.getBossbarDeathHint()));
             bossBarMap.remove(mobEntity);
             barPlayerMap.remove(bossBar);
         });

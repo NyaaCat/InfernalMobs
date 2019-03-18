@@ -30,6 +30,7 @@ namePrefix: '&fInfernal'
 nameTagsLevel: 1
 nameTagsName: '&f<prefix> <mobName>'
 bossBarsName: '&fLevel <mobLevel> &f<prefix> <mobName>'
+bossbarDeathHint: "[died]"
 enableBossBar: true
 configEnhance: true
 bossBarSettings:

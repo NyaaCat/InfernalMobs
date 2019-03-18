@@ -305,4 +305,7 @@ public class ConfigReader {
         return levelConfig;
     }
 
+    public static String getBossbarDeathHint() {
+        return " ".concat(cfg().getString("bossbarDeathHint"));
+    }
 }
