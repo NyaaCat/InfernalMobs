@@ -56,32 +56,34 @@ public class BossBarManager {
     }
 
     static void updateBar() {
-        if (!barPlayerMap.isEmpty()) {
-            barPlayerMap.forEach((bossBar, players) -> {
-                if (!players.isEmpty()) {
-                    for (Player player : players) {
-                        HashSet<BossBar> bossBars = playerBarMap.get(player);
-                        if (bossBars.contains(bossBar)) {
-                            bossBar.addPlayer(player);
-                        } else {
-                            bossBar.removePlayer(player);
+        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
+            if (!barPlayerMap.isEmpty()) {
+                barPlayerMap.forEach((bossBar, players) -> {
+                    if (!players.isEmpty()) {
+                        for (Player player : players) {
+                            HashSet<BossBar> bossBars = playerBarMap.get(player);
+                            if (bossBars.contains(bossBar)) {
+                                bossBar.addPlayer(player);
+                            } else {
+                                bossBar.removePlayer(player);
+                            }
                         }
                     }
-                }
-                LivingEntity livingEntity = bossBarMap.inverse().get(bossBar);
-                double health = livingEntity.getHealth();
-                double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                double progress = health / maxHealth;
-                bossBar.setProgress(progress);
-                if (progress < 0.33) {
-                    bossBar.setColor(BarColor.RED);
-                } else if (progress < 0.66) {
-                    bossBar.setColor(BarColor.YELLOW);
-                } else {
-                    bossBar.setColor(BarColor.BLUE);
-                }
-            });
-        }
+                    LivingEntity livingEntity = bossBarMap.inverse().get(bossBar);
+                    double health = livingEntity.getHealth();
+                    double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+                    double progress = health / maxHealth;
+                    bossBar.setProgress(progress);
+                    if (progress < 0.33) {
+                        bossBar.setColor(BarColor.RED);
+                    } else if (progress < 0.66) {
+                        bossBar.setColor(BarColor.YELLOW);
+                    } else {
+                        bossBar.setColor(BarColor.BLUE);
+                    }
+                });
+            }
+        });
     }
 
     private static BossBar getBossBar(LivingEntity livingEntity) {
