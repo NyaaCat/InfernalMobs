@@ -176,6 +176,9 @@ public class EventListener implements Listener {
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
+        if (killer==null){
+            BossBarManager.removeMob(mob, mobEntity);
+        }
         GameMode gameMode = killer.getGameMode();
         if (determineShouldDrop(killer != null, (killer != null) && (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR))) {
             ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());

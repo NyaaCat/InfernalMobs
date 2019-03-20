@@ -103,7 +103,7 @@ public class BossBarManager {
     public static void removeMob(Mob mob, LivingEntity mobEntity) {
         Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
             BossBar bossBar = bossBarMap.get(mobEntity);
-            HashSet<Player> players = barPlayerMap.get(bossBar);
+            HashSet<Player> players = barPlayerMap.computeIfAbsent(bossBar, (bar) -> new HashSet<>());
             if (!players.isEmpty()){
                 players.forEach(player -> {
                     HashSet<BossBar> bossBars = playerBarMap.get(player);
