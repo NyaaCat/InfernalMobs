@@ -180,10 +180,9 @@ public class EventListener implements Listener {
         if (determineShouldDrop(killer != null, (killer != null) && (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR))) {
             ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
             if (drop != null && drop.getType() != Material.AIR) {
-                final int min = 1;
-                final int max = ConfigReader.getDropChance();
-                final int randomNum = new Random().nextInt(max - min + 1) + min;
-                if (randomNum == 1) {
+                final int percentage = ConfigReader.getDropChance();
+                final int randomNum = new Random().nextInt(100);
+                if (randomNum <= percentage) {
                     event.getDrops().add(drop);
                     selectedDropItem = drop;
                 }
