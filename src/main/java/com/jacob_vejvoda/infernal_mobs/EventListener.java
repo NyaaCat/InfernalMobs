@@ -182,7 +182,7 @@ public class EventListener implements Listener {
             if (drop != null && drop.getType() != Material.AIR) {
                 final int percentage = ConfigReader.getDropChance();
                 final int randomNum = new Random().nextInt(100);
-                if (randomNum <= percentage) {
+                if (randomNum < percentage) {
                     event.getDrops().add(drop);
                     selectedDropItem = drop;
                 }
