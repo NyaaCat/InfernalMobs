@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
+import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
@@ -106,9 +107,9 @@ public class MobManager {
      */
     public static String getMobNameTag(InfernalMobSpawnEvent type, List<EnumAbilities> abilities) {
         String tag = ConfigReader.getMobNameTag();
-        tag = tag.replace("<mobName>", type.mobEntity.getType().name())
+        tag = tag.replace("<mobName>", type.mobEntity.getCustomName()==null? type.mobEntity.getName(): type.mobEntity.getCustomName())
                 .replace("<mobLevel>", Integer.toString(type.mob.level)
-                .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32)));
+                        .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32)));
         tag = tag.replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(type.mob.level));
         tag = ChatColor.translateAlternateColorCodes('&', tag);
         return tag;
@@ -169,7 +170,7 @@ public class MobManager {
         }
         // setup infernal mob
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
-        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(),level ,abilities);
+        Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), level, abilities);
 
         InfernalMobSpawnEvent spwanEvent;
         if (parentId != null) {
@@ -180,6 +181,11 @@ public class MobManager {
         for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
 
         setInfernalHealth(spwanEvent);
+        CustomMobConfig customMobConfig = ConfigReader.getCustomMobConfig();
+        CustomMobConfig.CustomMob customMob = customMobConfig.getIfCustom(mobEntity, level, true);
+        if (customMob != null) {
+            customMobConfig.addCustomAttr(mob, customMob);
+        }
         setInfernalMobName(spwanEvent);
 
         mobMap.put(id, mob);
@@ -213,7 +219,7 @@ public class MobManager {
         List<EnumAbilities> enumAbilities = null;
         if (ConfigReader.isEnhanceEnabled()) {
             LevelConfig levelConfig = ConfigReader.getLevelConfig();
-            enumAbilities = Helper.randomNItems(levelConfig.getAbilitiyList(level),level);
+            enumAbilities = Helper.randomNItems(levelConfig.getAbilitiyList(level), level);
         }
         if (enumAbilities == null) {
             enumAbilities = Helper.randomNItems(ConfigReader.getEnabledAbilities(), level);

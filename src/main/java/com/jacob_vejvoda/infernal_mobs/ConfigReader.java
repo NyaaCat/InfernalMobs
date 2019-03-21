@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
 import org.bukkit.Color;
@@ -16,6 +17,7 @@ import static org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public class ConfigReader {
     private static LevelConfig levelConfig;
+    private static CustomMobConfig customMobConfig;
 
     private static ConfigurationSection cfg() {
         return InfernalMobs.instance.getConfig();
@@ -307,5 +309,15 @@ public class ConfigReader {
 
     public static String getBossbarDeathHint() {
         return " ".concat(cfg().getString("bossbarDeathHint"));
+    }
+
+    public static CustomMobConfig getCustomMobConfig() {
+        return customMobConfig == null? loadCustomMob() : customMobConfig;
+    }
+
+    private static CustomMobConfig loadCustomMob() {
+        customMobConfig = new CustomMobConfig();
+        customMobConfig.load();
+        return customMobConfig;
     }
 }

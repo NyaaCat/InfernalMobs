@@ -1,0 +1,15 @@
+mobs:
+  spiderking:
+    __class__: com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig$CustomMob
+    name: SpiderKing # the name tag shows [prefix] SpiderKing [level] ... as the template defined in config
+    type: SPIDER
+    levels:
+      - 5
+      - 6
+      - 7
+    abilities:  # leave blank for none, 'random' for random abilities
+      - sprint
+      - webber
+    nbttags: "{Attributes:[{Name:generic.maxHealth,Base:50},{Name:generic.movementSpeed,Base:0.9},{Name:generic.attackDamage,Base:20},{Name:generic.followRange,Base:50},{Name:generic.knockbackResistance,Base:0.2},{Name:generic.armor,Base:10}]}"
+    spawnChance: 50
+    canAutoSpawn: true

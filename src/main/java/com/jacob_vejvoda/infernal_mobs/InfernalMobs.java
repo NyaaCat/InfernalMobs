@@ -1,6 +1,8 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.loot.LootManager;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
@@ -25,6 +27,8 @@ public class InfernalMobs extends JavaPlugin {
     public CommandHandler cmd;
     public MobManager mobManager;
     public LootManager lootManager;
+    public LevelConfig levelConfig;
+    public CustomMobConfig customMobConfig;
 
     public InfernalMobs() {
         this.errorList = new ArrayList<>();
@@ -41,6 +45,7 @@ public class InfernalMobs extends JavaPlugin {
         this.lootManager = new LootManager(this);
         this.getCommand("infernalmobs").setExecutor(cmd);
         this.getServer().getPluginManager().registerEvents(this.events, this);
+
 
         // Start the main loop
         new BukkitRunnable(){
