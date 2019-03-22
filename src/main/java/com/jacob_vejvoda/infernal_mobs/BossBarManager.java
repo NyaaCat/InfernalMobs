@@ -59,6 +59,7 @@ public class BossBarManager {
     static void updateBar() {
         Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
             if (!barPlayerMap.isEmpty()) {
+                List<BossBar> removeList = new ArrayList<>();
                 barPlayerMap.forEach((bossBar, players) -> {
                     if (!players.isEmpty()) {
                         for (Player player : players) {
@@ -70,7 +71,17 @@ public class BossBarManager {
                             }
                         }
                     }
-                    LivingEntity livingEntity = bossBarMap.inverse().get(bossBar);
+                    BiMap<BossBar, LivingEntity> inverse = bossBarMap.inverse();
+                    LivingEntity livingEntity = inverse.get(bossBar);
+                    if (livingEntity == null){
+                        bossBar.removeAll();
+                        inverse.remove(bossBar);
+                        removeList.add(bossBar);
+                        barPlayerMap.remove(bossBar);
+                        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->
+                                playerBarMap.forEach((player, bossBars) -> bossBars.remove(bossBar)));
+                        return;
+                    }
                     double health = livingEntity.getHealth();
                     double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
                     double progress = health / maxHealth;

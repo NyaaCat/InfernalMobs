@@ -33,12 +33,12 @@ public class AbilityConfig extends FileConfigure {
         if (!collect.isEmpty()) {
             collect.forEach(stringAttrEntry -> {
                 String key = stringAttrEntry.getKey();
-                EnumAbilities enumAbilities = EnumAbilities.valueOf(key.toUpperCase());
-                if (enumAbilities == null){
-                    getPlugin().getLogger().log(Level.WARNING, "unknown ability "+key);
-                    return;
+                try {
+                    EnumAbilities enumAbilities = EnumAbilities.valueOf(key.toUpperCase());
+                    abilities.add(enumAbilities);
+                }catch (IllegalArgumentException e){
+                    getPlugin().getLogger().log(Level.WARNING, "unknown ability " + key);
                 }
-                abilities.add(enumAbilities);
             });
         }
         return abilities;

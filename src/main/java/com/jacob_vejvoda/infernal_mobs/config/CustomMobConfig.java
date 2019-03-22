@@ -60,7 +60,7 @@ public class CustomMobConfig extends FileConfigure {
             mob.abilityList.clear();
             customMob.abilities.forEach(s -> mob.abilityList.add(EnumAbilities.valueOf(s.toUpperCase())));
         }catch (Exception e){
-            InfernalMobs.instance.getLogger().log(Level.SEVERE, "config error");
+            InfernalMobs.instance.getLogger().log(Level.WARNING, "config error : ", e);
         }
     }
 
