@@ -31,10 +31,10 @@ public class BossBarManager {
             Vector eyeSight = p.getEyeLocation().getDirection();
             Vector mobVector = currentMobEntity.getEyeLocation().toVector().subtract(p.getEyeLocation().toVector());
             double angle = Helper.getVectorAngle(eyeSight, mobVector);
-            if (!Double.isFinite(angle)){
+            if (!Double.isFinite(angle)) {
                 return;
             }
-            angleSet.add(new AngledEntity(angle,calcDistance(p, entity) , currentMobEntity));
+            angleSet.add(new AngledEntity(angle, calcDistance(p, entity), currentMobEntity));
         });
         List<AngledEntity> collect = angleSet.stream().sorted().limit(maxBars).collect(Collectors.toList());
         if (!collect.isEmpty()) {
@@ -57,10 +57,11 @@ public class BossBarManager {
     }
 
     static void updateBar() {
-        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
+        Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> {
             if (!barPlayerMap.isEmpty()) {
                 List<BossBar> removeList = new ArrayList<>();
                 barPlayerMap.forEach((bossBar, players) -> {
+                    if (bossBar == null) return;
                     if (!players.isEmpty()) {
                         for (Player player : players) {
                             HashSet<BossBar> bossBars = playerBarMap.get(player);
@@ -73,12 +74,12 @@ public class BossBarManager {
                     }
                     BiMap<BossBar, LivingEntity> inverse = bossBarMap.inverse();
                     LivingEntity livingEntity = inverse.get(bossBar);
-                    if (livingEntity == null){
+                    if (livingEntity == null) {
                         bossBar.removeAll();
                         inverse.remove(bossBar);
                         removeList.add(bossBar);
                         barPlayerMap.remove(bossBar);
-                        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->
+                        Bukkit.getScheduler().runTask(InfernalMobs.instance, () ->
                                 playerBarMap.forEach((player, bossBars) -> bossBars.remove(bossBar)));
                         return;
                     }
@@ -112,10 +113,11 @@ public class BossBarManager {
     }
 
     public static void removeMob(Mob mob, LivingEntity mobEntity) {
-        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
+        Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> {
             BossBar bossBar = bossBarMap.get(mobEntity);
+            if (bossBar == null) return;
             HashSet<Player> players = barPlayerMap.computeIfAbsent(bossBar, (bar) -> new HashSet<>());
-            if (!players.isEmpty()){
+            if (!players.isEmpty()) {
                 players.forEach(player -> {
                     HashSet<BossBar> bossBars = playerBarMap.get(player);
                     bossBars.remove(bossBar);
@@ -130,12 +132,12 @@ public class BossBarManager {
     }
 
     static class AngledEntity implements Comparable<AngledEntity> {
-        private static int CLOSE_DISTANCE = (GUI.GUI_SCAN_DISTANCE * GUI.GUI_SCAN_DISTANCE)/4;
+        private static int CLOSE_DISTANCE = (GUI.GUI_SCAN_DISTANCE * GUI.GUI_SCAN_DISTANCE) / 4;
         double angle;
         double distance;
         LivingEntity livingEntity;
 
-        public AngledEntity(double angle, double distance,LivingEntity currentMobEntity) {
+        public AngledEntity(double angle, double distance, LivingEntity currentMobEntity) {
             this.angle = angle;
             this.distance = distance;
             livingEntity = currentMobEntity;
@@ -157,14 +159,14 @@ public class BossBarManager {
             c1 = angle;
             c2 = o.angle;
             double distanceShift = 1000000d;
-            if (distance > CLOSE_DISTANCE){
+            if (distance > CLOSE_DISTANCE) {
                 c1 += distanceShift;
             }
-            if (o.distance > CLOSE_DISTANCE){
+            if (o.distance > CLOSE_DISTANCE) {
                 c2 += distanceShift;
             }
-            if (c1 - c2>0) return 1;
-            if (c1 == c2)return 0;
+            if (c1 - c2 > 0) return 1;
+            if (c1 == c2) return 0;
             return -1;
         }
     }
