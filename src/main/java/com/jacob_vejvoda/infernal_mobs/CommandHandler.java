@@ -259,13 +259,13 @@ public class CommandHandler implements CommandExecutor {
                 CustomMobConfig.CustomMob cm = mbConf.getByName(mobName);
                 List<EnumAbilities> abilities = new ArrayList<>();
                 mbConf.setAbilities(abilities, cm);
-                Mob mob = mbConf.spawnCustomMob(plugin.mobManager, farSpawnLoc, abilities, cm);
+                Mob mob = mbConf.spawnCustomMob(plugin.mobManager, loc, abilities, cm);
                 String top = arg.top();
                 if (top !=null) {
                     cm.spawnLevel = Integer.parseInt(top);
                 }else {
                     cm.spawnLevel = cm.smSpawnLevel == -1 ?
-                            ConfigReader.getLevelConfig().getLevel(farSpawnLoc.distance(farSpawnLoc.getWorld().getSpawnLocation()))
+                            ConfigReader.getLevelConfig().getLevel(loc.distance(loc.getWorld().getSpawnLocation()))
                             : cm.smSpawnLevel;
                 }
                 mbConf.addCustomAttr(mob, cm);
