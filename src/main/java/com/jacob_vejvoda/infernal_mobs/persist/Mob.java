@@ -2,6 +2,8 @@ package com.jacob_vejvoda.infernal_mobs.persist;
 
 import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +16,8 @@ public class Mob {
     public int level;
     public List<EnumAbilities> abilityList;
     public int maxMamaInfernal = 0;
+    public boolean isCustomMob = false;
+    public String customLoot;
 
     public Mob(UUID entityId, int lives, ParticleEffect particleEffect, int level, List<EnumAbilities> abilityList){
         this.entityId = entityId;

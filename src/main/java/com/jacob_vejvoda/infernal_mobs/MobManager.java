@@ -107,7 +107,7 @@ public class MobManager {
      */
     public static String getMobNameTag(InfernalMobSpawnEvent type, List<EnumAbilities> abilities) {
         String tag = ConfigReader.getMobNameTag();
-        tag = tag.replace("<mobName>", type.mobEntity.getCustomName()==null? type.mobEntity.getName(): type.mobEntity.getCustomName())
+        tag = tag.replace("<mobName>", type.mobEntity.getCustomName() == null ? type.mobEntity.getName() : type.mobEntity.getCustomName())
                 .replace("<mobLevel>", Integer.toString(type.mob.level)
                         .replace("<abilities>", getHumanReadableAbilityString(abilities, 5, 32)));
         tag = tag.replace("<prefix>", ConfigReader.getNameTagPrefixByLevel(type.mob.level));
@@ -155,6 +155,13 @@ public class MobManager {
 
         int level = getInfernalLevelForLocation(mobEntity.getLocation());
         List<EnumAbilities> abilities = getAbilities(level);
+
+        CustomMobConfig customMobConfig = ConfigReader.getCustomMobConfig();
+        CustomMobConfig.CustomMob customMob = customMobConfig.determineCustom(mobEntity, level, true);
+        if (customMob!=null){
+            customMobConfig.setAbilities(abilities, customMob);
+        }
+
         if (abilities == null || abilities.size() <= 0) return;
         if (parentId != null) {
             if (!mobMap.containsKey(parentId) || mobMap.get(parentId).maxMamaInfernal <= 0) {
@@ -172,20 +179,19 @@ public class MobManager {
         int lives = abilities.contains(EnumAbilities.ONEUP) ? 2 : 1;
         Mob mob = new Mob(id, lives, ConfigReader.getRandomParticleEffect(), level, abilities);
 
+
         InfernalMobSpawnEvent spwanEvent;
         if (parentId != null) {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, parentId, InfernalSpawnReason.MAMA);
         } else {
             spwanEvent = new InfernalMobSpawnEvent(mobEntity, mob, null, InfernalSpawnReason.NATURAL);
         }
-        for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
-
         setInfernalHealth(spwanEvent);
-        CustomMobConfig customMobConfig = ConfigReader.getCustomMobConfig();
-        CustomMobConfig.CustomMob customMob = customMobConfig.getIfCustom(mobEntity, level, true);
         if (customMob != null) {
             customMobConfig.addCustomAttr(mob, customMob);
         }
+
+        for (EnumAbilities ability : abilities) ability.onMobSpawn(spwanEvent);
         setInfernalMobName(spwanEvent);
 
         mobMap.put(id, mob);

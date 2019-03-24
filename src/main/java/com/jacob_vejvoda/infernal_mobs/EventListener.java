@@ -177,7 +177,12 @@ public class EventListener implements Listener {
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
         if (determineShouldDrop(killer != null, (killer != null) && (killer.getGameMode() == GameMode.CREATIVE || killer.getGameMode() == GameMode.SPECTATOR))) {
-            ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
+            ItemStack drop;
+            if(!mob.isCustomMob){
+                drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
+            }else {
+                drop = this.plugin.lootManager.getLootByName(killer, mob.customLoot);
+            }
             if (drop != null && drop.getType() != Material.AIR) {
                 final int percentage = ConfigReader.getDropChance();
                 final int randomNum = new Random().nextInt(100);
