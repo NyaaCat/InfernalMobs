@@ -1,17 +1,18 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
+import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.loot.LootItem;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -189,7 +190,45 @@ public class CommandHandler implements CommandExecutor {
                         sender.sendMessage("Cannot spawn mob");
                     }
                 }
-            } else if ("cspawn".equalsIgnoreCase(subcommand)) {
+            } else if ("sm".equalsIgnoreCase(subcommand)){
+                String mobName = arg.nextString();
+                if ("list".equalsIgnoreCase(mobName)){
+                    Map<String, CustomMobConfig.CustomMob> customMobs = ConfigReader.getCustomMobConfig().getCustomMobs();
+                    Set<String> names = customMobs.keySet();
+                    if (names.isEmpty()){
+                        sender.sendMessage("no custom mobs found");
+                    }else {
+                        String message = "&aHere "+ (names.size() == 1? "is ": "are ")+names.size()+" mob"+(names.size()==1?"":"s");
+                        message = ChatColor.translateAlternateColorCodes('&', message);
+                        sender.sendMessage(message);
+                        names.forEach(s -> {
+                            sender.sendMessage(s);
+                        });
+                    }
+                    return true;
+                }
+                Location farSpawnLoc = asPlayer(sender).getTargetBlock((Set<Material>) null, 200).getLocation();
+                CustomMobConfig mbConf = ConfigReader.getCustomMobConfig();
+                CustomMobConfig.CustomMob cm = mbConf.getByName(mobName);
+                List<EnumAbilities> abilities = new ArrayList<>();
+                mbConf.setAbilities(abilities, cm);
+                Mob mob = mbConf.spawnCustomMob(plugin.mobManager, farSpawnLoc, abilities, cm);
+                String top = arg.top();
+                if (top !=null) {
+                    cm.spawnLevel = Integer.parseInt(top);
+                }else {
+                    cm.spawnLevel = cm.smSpawnLevel == -1 ?
+                            ConfigReader.getLevelConfig().getLevel(farSpawnLoc.distance(farSpawnLoc.getWorld().getSpawnLocation()))
+                            : cm.smSpawnLevel;
+                }
+                mbConf.addCustomAttr(mob, cm);
+                LivingEntity entity = (LivingEntity) InfernalMobs.instance.getServer().getEntity(mob.entityId);
+                InfernalMobSpawnEvent event = new InfernalMobSpawnEvent(entity, mob, null, InfernalSpawnReason.COMMAND);
+                MobManager.setInfernalMobName(event);
+                String spawned = "&aspawned &e"+cm.name+" &alevel &e"+cm.spawnLevel;
+                spawned = ChatColor.translateAlternateColorCodes('&',spawned);
+                sender.sendMessage(spawned);
+            }else if ("cspawn".equalsIgnoreCase(subcommand)) {
                 EntityType type = arg.nextEnum(EntityType.class);
                 String worldName = arg.nextString();
                 World w = plugin.getServer().getWorld(worldName);

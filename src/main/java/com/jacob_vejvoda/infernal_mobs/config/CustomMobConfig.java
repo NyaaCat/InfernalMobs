@@ -4,15 +4,16 @@ import cat.nyaa.nyaacore.configuration.FileConfigure;
 import cat.nyaa.nyaacore.configuration.ISerializable;
 import cat.nyaa.nyaacore.utils.NmsUtils;
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
+import com.jacob_vejvoda.infernal_mobs.MobManager;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import com.jacob_vejvoda.infernal_mobs.loot.LootConfig;
 import com.jacob_vejvoda.infernal_mobs.loot.LootManager;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
-import org.bukkit.Material;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
@@ -54,7 +55,7 @@ public class CustomMobConfig extends FileConfigure {
         return null;
     }
 
-    public void setAbilities(List<EnumAbilities> abilityList, CustomMob customMob){
+    public void setAbilities(List<EnumAbilities> abilityList, CustomMob customMob) {
         abilityList.clear();
         customMob.abilities.forEach(s -> abilityList.add(EnumAbilities.valueOf(s.toUpperCase())));
     }
@@ -68,7 +69,7 @@ public class CustomMobConfig extends FileConfigure {
             mob.level = customMob.spawnLevel;
             mob.isCustomMob = true;
             mob.customLoot = getLoot(customMob);
-            } catch (Exception e) {
+        } catch (Exception e) {
             InfernalMobs.instance.getLogger().log(Level.WARNING, "config error : ", e);
         }
     }
@@ -82,11 +83,11 @@ public class CustomMobConfig extends FileConfigure {
             try {
                 String[] split = s.split(":");
                 String lootName = split[0];
-                if (!lootManager.hasLootForName(lootName))throw new IllegalArgumentException();
+                if (!lootManager.hasLootForName(lootName)) throw new IllegalArgumentException();
                 double weight = Double.parseDouble(split[1]);
                 randomMap.put(lootName, weight);
-            }catch (Exception e){
-                InfernalMobs.instance.getLogger().log(Level.WARNING, "loot \""+s+"\" for custom mob \""+customMob.name+"\" is not valid.");
+            } catch (Exception e) {
+                InfernalMobs.instance.getLogger().log(Level.WARNING, "loot \"" + s + "\" for custom mob \"" + customMob.name + "\" is not valid.");
             }
         });
         return LootConfig.weightedRandom(randomMap);
@@ -100,23 +101,37 @@ public class CustomMobConfig extends FileConfigure {
         return i < spawnChance;
     }
 
+    public CustomMob getByName(String mobName) {
+        return mobs.get(mobName);
+    }
+
+    public Mob spawnCustomMob(MobManager mobManager, Location location, List<EnumAbilities> abilities, CustomMob cm) {
+        return mobManager.spawnMob(EntityType.valueOf(cm.type.toUpperCase()), location, abilities, InfernalSpawnReason.COMMAND);
+    }
+
+    public Map<String, CustomMob> getCustomMobs() {
+        return mobs;
+    }
+
     public static class CustomMob implements ISerializable, Cloneable {
         @Serializable
-        String name;
+        public String name;
         @Serializable
-        String type;
+        public String type;
         @Serializable
-        List<Object> levels;
+        public List<Object> levels;
         @Serializable
-        List<String> abilities = new ArrayList<>();
+        public List<String> abilities = new ArrayList<>();
         @Serializable
-        String nbttags = "";
+        public String nbttags = "";
         @Serializable
-        int spawnChance = 50;
+        public int spawnChance = 50;
         @Serializable
-        boolean canAutoSpawn = true;
+        public boolean canAutoSpawn = true;
         @Serializable
-        List<String> loots;
+        public List<String> loots;
+        @Serializable
+        public int smSpawnLevel = -1;
 
         public int spawnLevel = 1;
 
