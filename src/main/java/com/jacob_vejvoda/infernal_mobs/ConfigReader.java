@@ -320,4 +320,8 @@ public class ConfigReader {
         customMobConfig.load();
         return customMobConfig;
     }
+
+    public static int getMobRandomTick() {
+        return cfg().getInt("mobRandomTick", 20);
+    }
 }

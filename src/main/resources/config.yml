@@ -275,3 +275,4 @@ enableDrops: true
 dropChance: 1
 enableFarmingDrops: false
 naturalSpawnHeight: 0
+mobRandomTick: 20

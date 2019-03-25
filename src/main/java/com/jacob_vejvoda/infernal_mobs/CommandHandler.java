@@ -56,6 +56,7 @@ public class CommandHandler implements CommandExecutor {
                 ConfigReader.getLevelConfig().load();
                 ConfigReader.getCustomMobConfig().load();
                 plugin.reloadLoot();
+                InfernalMobs.instance.reloadMainLoopTask();
                 sender.sendMessage("§eConfig reloaded!");
             } else if ("mobList".equalsIgnoreCase(subcommand)) {
                 sender.sendMessage("§6Mob List:");
@@ -374,7 +375,7 @@ public class CommandHandler implements CommandExecutor {
 
     public static void printHelp(final CommandSender sender) {
         sender.sendMessage("--Infernal Mobs v" + Bukkit.getServer().getPluginManager().getPlugin("InfernalMobs").getDescription().getVersion() + "--");
-        sender.sendMessage("Usage: /im reload");
+        sender.sendMessage("Usage: /im reloadMainLoopTask");
         sender.sendMessage("Usage: /im worldInfo");
         sender.sendMessage("Usage: /im error");
         sender.sendMessage("Usage: /im getloot <index>");

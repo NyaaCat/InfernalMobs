@@ -13,11 +13,12 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class InfernalMobs extends JavaPlugin {
     public static InfernalMobs instance;
@@ -29,6 +30,9 @@ public class InfernalMobs extends JavaPlugin {
     public LootManager lootManager;
     public LevelConfig levelConfig;
     public CustomMobConfig customMobConfig;
+    private AsyncInfernalTicker asyncInfernalTicker;
+    private BukkitTask bukkitTask;
+    private BukkitRunnable mainLoopRunnable;
 
     public InfernalMobs() {
         this.errorList = new ArrayList<>();
@@ -48,12 +52,15 @@ public class InfernalMobs extends JavaPlugin {
 
 
         // Start the main loop
-        new BukkitRunnable(){
+
+        mainLoopRunnable = new BukkitRunnable() {
             @Override
             public void run() {
                 mainLoop();
             }
-        }.runTaskTimer(this, 20L, 20L);
+        };
+        reloadMainLoopTask();
+        asyncInfernalTicker = new AsyncInfernalTicker();
     }
 
     @Override
@@ -68,6 +75,23 @@ public class InfernalMobs extends JavaPlugin {
                 }
             }
         }
+    }
+
+    public void reloadMainLoopTask() {
+        if (bukkitTask != null) {
+            bukkitTask.cancel();
+        }
+        int mobRandomTick = ConfigReader.getMobRandomTick();
+        if (mobRandomTick < 10){
+            getLogger().log(Level.WARNING, "invalid random tick "+ mobRandomTick+", min is 10, set to 20.");
+            mobRandomTick = 20;
+        }
+        bukkitTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                mainLoop();
+            }
+        }.runTaskTimer(this, 0, mobRandomTick);
     }
 
     /**
@@ -101,29 +125,107 @@ public class InfernalMobs extends JavaPlugin {
             }
         }
 
-        for (Mob mob : mobManager.mobMap.values()) {
-            Entity e = Bukkit.getEntity(mob.entityId);
-            if (!(e instanceof LivingEntity)) continue;
-            if (!e.isValid() || e.isDead() || e.getLocation() == null || !e.getLocation().getChunk().isLoaded()) continue;
-            LivingEntity mobEntity = (LivingEntity) e;
+        int maxQueueSize = asyncInfernalTicker.getMaxQueueSize();
+        List<Mob> collect = mobManager.mobMap.values().stream()
+                .limit(maxQueueSize).collect(Collectors.toList());
+        asyncInfernalTicker.submitInfernalTickMobs(collect);
 
-            // send particle effects
-            Location feet = mobEntity.getLocation();
-            Location eye = mobEntity.getEyeLocation();
-            if (ConfigReader.particlesEnabled()) {
-                mob.particleEffect.spawnAt(feet);
-                if (feet.distanceSquared(eye) > 1)
-                    mob.particleEffect.spawnAt(eye);
-            }
-
-            // Per-cycle abilities
-            for (EnumAbilities ab : mob.abilityList) {
-                ab.perCycleEffect(mobEntity, mob);
-            }
-        }
+//
+//        for (Mob mob : mobManager.mobMap.values()) {
+//            Entity e = Bukkit.getEntity(mob.entityId);
+//            if (!(e instanceof LivingEntity)) continue;
+//            if (!e.isValid() || e.isDead() || e.getLocation() == null || !e.getLocation().getChunk().isLoaded()) continue;
+//            LivingEntity mobEntity = (LivingEntity) e;
+//
+//            // send particle effects
+//            Location feet = mobEntity.getLocation();
+//            Location eye = mobEntity.getEyeLocation();
+//            if (ConfigReader.particlesEnabled()) {
+//                mob.particleEffect.spawnAt(feet);
+//                if (feet.distanceSquared(eye) > 1)
+//                    mob.particleEffect.spawnAt(eye);
+//            }
+//
+//            // Per-cycle abilities
+//            for (EnumAbilities ab : mob.abilityList) {
+//                ab.perCycleEffect(mobEntity, mob);
+//            }
+//        }
     }
 
     public void reloadLoot() {
         this.lootManager.reload();
+    }
+
+    private class AsyncInfernalTicker {
+        private final BukkitScheduler scheduler;
+        Queue<Mob> mobEffectQueue;
+        private int lastTickMobCount = 0;
+        private int nextTickTasks = 0;
+        private boolean previousTaskFinished = true;
+        private boolean overload = false;
+        private int maxQueueSize = Integer.MAX_VALUE;
+
+        AsyncInfernalTicker() {
+            scheduler = Bukkit.getScheduler();
+            mobEffectQueue = new LinkedList<>();
+            Bukkit.getScheduler().runTaskTimer(InfernalMobs.this, () -> {
+                tick();
+                end();
+            }, 0, 1);
+        }
+
+        void tick() {
+            if (mobEffectQueue.isEmpty()) return;
+//            if (!previousTaskFinished && !overload){
+//                getLogger().log(Level.WARNING, "previous server tick didn't finished, maybe there's too much task to do.");
+//                overload = true;
+//            }else if (overload){
+//
+//            }
+            previousTaskFinished = false;
+            for (int i = 0; i < nextTickTasks; i++) {
+                if (mobEffectQueue.isEmpty()) return;
+                Mob mob = mobEffectQueue.poll();
+                Entity e = Bukkit.getEntity(mob.entityId);
+                if (!(e instanceof LivingEntity)) continue;
+                if (!e.isValid() || e.isDead() || e.getLocation() == null || !e.getLocation().getChunk().isLoaded())
+                    continue;
+                LivingEntity mobEntity = (LivingEntity) e;
+
+                // send particle effects
+                Location feet = mobEntity.getLocation();
+                Location eye = mobEntity.getEyeLocation();
+                if (ConfigReader.particlesEnabled()) {
+                    mob.particleEffect.spawnAt(feet);
+                    if (feet.distanceSquared(eye) > 1)
+                        mob.particleEffect.spawnAt(eye);
+                }
+
+                // Per-cycle abilities
+                for (EnumAbilities ab : mob.abilityList) {
+                    ab.perCycleEffect(mobEntity, mob);
+                }
+            }
+        }
+
+        private void end() {
+            previousTaskFinished = true;
+        }
+
+        public void submitInfernalTickMobs(List<Mob> mobs) {
+            if (mobs == null || mobs.isEmpty()) return;
+            mobs.forEach(mob -> mobEffectQueue.offer(mob));
+            double mobRandomTick = ((double) ConfigReader.getMobRandomTick());
+            nextTickTasks = (int) Math.ceil((mobs.size()) / mobRandomTick);
+        }
+
+        public int getLastTickMobCount() {
+            return lastTickMobCount;
+        }
+
+        public int getMaxQueueSize() {
+            return maxQueueSize;
+        }
     }
 }
