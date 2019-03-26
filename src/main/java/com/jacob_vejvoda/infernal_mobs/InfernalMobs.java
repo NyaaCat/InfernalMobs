@@ -103,8 +103,8 @@ public class InfernalMobs extends JavaPlugin {
         for (Player p : Bukkit.getOnlinePlayers()) {
             GUI.refreshPlayerScoreboard(p);
             GUI.refreshBossBar(p);
-            BossBarManager.updateBar();
         }
+        BossBarManager.updateBar();
 
         // clear mountee mobs
         for (Iterator<UUID> iter = mobManager.mounteeMobs.iterator(); iter.hasNext(); ) {

@@ -9,6 +9,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -43,7 +44,12 @@ public class GUI implements Listener {
                 .filter(entity -> entity instanceof LivingEntity && getPlugin().mobManager.mobMap.get(entity.getUniqueId()) != null)
                 .collect(Collectors.toSet());
 
-        BossBarManager.registerNearbyBossBar(p, nearbyInfMobs);
+        new BukkitRunnable(){
+            @Override
+            public void run() {
+                BossBarManager.registerNearbyBossBar(p, nearbyInfMobs);
+            }
+        }.runTaskAsynchronously(InfernalMobs.instance);
     }
 
     public static void refreshPlayerScoreboard(Player p) {

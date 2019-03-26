@@ -64,10 +64,11 @@ public class EventListener implements Listener {
             for (final Entity entity : mob.getNearbyEntities(64.0, 64.0, 64.0)) {
                 if (entity instanceof Player) {
                     GUI.refreshPlayerScoreboard((Player)entity);
-                    GUI.refreshBossBar((Player) entity);
+//                    GUI.refreshBossBar((Player) entity);
                 }
             }
-            BossBarManager.updateBar();
+            Mob im = this.plugin.mobManager.mobMap.get(mob.getUniqueId());
+            BossBarManager.updateMob(im);
         }
     }
 

@@ -21,10 +21,12 @@ public class BossBarManager {
     private final static Map<Player, HashSet<BossBar>> playerBarMap = new HashMap<>();
     private final static BiMap<LivingEntity, BossBar> bossBarMap = HashBiMap.create();
 
+    private static final Object registerLock = new Object();
+
     static void registerNearbyBossBar(Player p, Set<Entity> nearbyInfMobs) {
         int maxBars = getMaxBarCount();
         HashSet<BossBar> bossBars = playerBarMap.computeIfAbsent(p, k -> new HashSet<>());
-        bossBars.clear();
+//        bossBars.clear();
         List<AngledEntity> angleSet = new ArrayList<>();
         nearbyInfMobs.forEach(entity -> {
             LivingEntity currentMobEntity = (LivingEntity) entity;
@@ -37,11 +39,15 @@ public class BossBarManager {
             angleSet.add(new AngledEntity(angle, calcDistance(p, entity), currentMobEntity));
         });
         List<AngledEntity> collect = angleSet.stream().sorted().limit(maxBars).collect(Collectors.toList());
-        if (!collect.isEmpty()) {
-            collect.forEach(angle -> {
-                BossBar bossBar = getBossBar(angle.livingEntity);
-                registerPlayer(bossBar, p);
-            });
+
+        synchronized (registerLock) {
+            bossBars.clear();
+            if (!collect.isEmpty()) {
+                collect.forEach(angle -> {
+                    BossBar bossBar = getBossBar(angle.livingEntity);
+                    registerPlayer(bossBar, p);
+                });
+            }
         }
     }
 
@@ -50,59 +56,76 @@ public class BossBarManager {
     }
 
     private static void registerPlayer(BossBar bossBar, Player p) {
-        HashSet<Player> barPlayers = barPlayerMap.computeIfAbsent(bossBar, k -> new HashSet<>());
-        HashSet<BossBar> playerBars = playerBarMap.computeIfAbsent(p, k -> new HashSet<>());
-        playerBars.add(bossBar);
-        barPlayers.add(p);
+        synchronized (playerBarMap) {
+            synchronized (barPlayerMap) {
+                HashSet<Player> barPlayers = barPlayerMap.computeIfAbsent(bossBar, k -> new HashSet<>());
+                HashSet<BossBar> playerBars = playerBarMap.computeIfAbsent(p, k -> new HashSet<>());
+                playerBars.add(bossBar);
+                barPlayers.add(p);
+            }
+        }
     }
 
     static void updateBar() {
-        Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(InfernalMobs.instance, () -> {
             if (!barPlayerMap.isEmpty()) {
-                List<BossBar> removeList = new ArrayList<>();
-                barPlayerMap.forEach((bossBar, players) -> {
-                    if (bossBar == null) return;
-                    if (!players.isEmpty()) {
-                        for (Player player : players) {
-                            HashSet<BossBar> bossBars = playerBarMap.get(player);
-                            if (bossBars.contains(bossBar)) {
-                                bossBar.addPlayer(player);
-                            } else {
-                                bossBar.removePlayer(player);
+                synchronized (registerLock) {
+                    List<BossBar> removeList = new ArrayList<>();
+                    synchronized (barPlayerMap) {
+                        barPlayerMap.forEach((bossBar, players) -> {
+                            if (bossBar == null) return;
+                            if (!players.isEmpty()) {
+                                for (Player player : players) {
+                                    HashSet<BossBar> bossBars = playerBarMap.get(player);
+                                    if (bossBars.contains(bossBar)) {
+                                        bossBar.addPlayer(player);
+                                    } else {
+                                        bossBar.removePlayer(player);
+                                    }
+                                }
                             }
-                        }
+                            BiMap<BossBar, LivingEntity> inverse = bossBarMap.inverse();
+                            LivingEntity livingEntity = inverse.get(bossBar);
+                            if (livingEntity == null) {
+                                bossBar.removeAll();
+                                inverse.remove(bossBar);
+                                removeList.add(bossBar);
+                                return;
+                            }
+//                            refreshBar(bossBar, livingEntity);
+                        });
+                        removeList.forEach(bossBar -> {
+                            barPlayerMap.remove(bossBar);
+                            Bukkit.getScheduler().runTask(InfernalMobs.instance, () ->
+                                    playerBarMap.forEach((player, bossBars) -> bossBars.remove(bossBar)));
+
+                        });
                     }
-                    BiMap<BossBar, LivingEntity> inverse = bossBarMap.inverse();
-                    LivingEntity livingEntity = inverse.get(bossBar);
-                    if (livingEntity == null) {
-                        bossBar.removeAll();
-                        inverse.remove(bossBar);
-                        removeList.add(bossBar);
-                        barPlayerMap.remove(bossBar);
-                        Bukkit.getScheduler().runTask(InfernalMobs.instance, () ->
-                                playerBarMap.forEach((player, bossBars) -> bossBars.remove(bossBar)));
-                        return;
-                    }
-                    double health = livingEntity.getHealth();
-                    double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                    double progress = health / maxHealth;
-                    bossBar.setProgress(progress);
-                    if (progress < 0.33) {
-                        bossBar.setColor(BarColor.RED);
-                    } else if (progress < 0.66) {
-                        bossBar.setColor(BarColor.YELLOW);
-                    } else {
-                        bossBar.setColor(BarColor.BLUE);
-                    }
-                });
+                }
             }
-        });
+        }, 1);
+    }
+
+    private static void refreshBar(BossBar bossBar, LivingEntity livingEntity) {
+        double health = livingEntity.getHealth();
+        double maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        double progress = health / maxHealth;
+        bossBar.setProgress(progress);
+        if (progress < 0.33) {
+            bossBar.setColor(BarColor.RED);
+        } else if (progress < 0.66) {
+            bossBar.setColor(BarColor.YELLOW);
+        } else {
+            bossBar.setColor(BarColor.BLUE);
+        }
     }
 
     private static BossBar getBossBar(LivingEntity livingEntity) {
         BossBar bossBar = bossBarMap.computeIfAbsent(livingEntity, k -> {
             String customName = livingEntity.getCustomName() == null ? livingEntity.getName() : livingEntity.getCustomName();
-            return Bukkit.createBossBar(customName, BarColor.BLUE, BarStyle.SEGMENTED_10);
+            BossBar bossBar1 = Bukkit.createBossBar(customName, BarColor.BLUE, BarStyle.SEGMENTED_10);
+            refreshBar(bossBar1, livingEntity);
+            return bossBar1;
         });
         return bossBar;
     }
@@ -113,7 +136,7 @@ public class BossBarManager {
     }
 
     public static void removeMob(Mob mob, LivingEntity mobEntity) {
-        Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(InfernalMobs.instance, () -> {
             BossBar bossBar = bossBarMap.get(mobEntity);
             if (bossBar == null) return;
             HashSet<Player> players = barPlayerMap.computeIfAbsent(bossBar, (bar) -> new HashSet<>());
@@ -126,9 +149,24 @@ public class BossBarManager {
             players.clear();
             Bukkit.getScheduler().runTaskLater(InfernalMobs.instance, bossBar::removeAll, 20);
             bossBar.setTitle(bossBar.getTitle().concat(ConfigReader.getBossbarDeathHint()));
-            bossBarMap.remove(mobEntity);
-            barPlayerMap.remove(bossBar);
+            refreshBar(bossBar, mobEntity);
+            synchronized (bossBarMap) {
+                synchronized (barPlayerMap) {
+                    bossBarMap.remove(mobEntity);
+                    barPlayerMap.remove(bossBar);
+                }
+            }
         });
+    }
+
+    public static void updateMob(Mob im) {
+        Entity entity = Bukkit.getServer().getEntity(im.entityId);
+        if (entity instanceof LivingEntity) {
+            BossBar bossBar = bossBarMap.get(entity);
+            if (bossBar != null) {
+                refreshBar(bossBar, (LivingEntity) entity);
+            }
+        }
     }
 
     static class AngledEntity implements Comparable<AngledEntity> {
