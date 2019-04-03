@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs.ability;
 
-import com.jacob_vejvoda.infernal_mobs.ability.*;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.*;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.extended.AbilityMeteor;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.entity.LivingEntity;
@@ -41,7 +42,8 @@ public enum EnumAbilities implements IAbility {
     MOUNTED("mounted", AbilityMounted.class),
     MORPH("morph", AbilityMorph.class),
     GHOST("ghost", AbilityGhost.class),
-    CONFUSING("confusing", AbilityConfusing.class);
+    CONFUSING("confusing", AbilityConfusing.class),
+    METEOR("meteor", AbilityMeteor.class);
 
     private final IAbility instance;
 

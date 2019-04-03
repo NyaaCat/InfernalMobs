@@ -133,7 +133,7 @@ public class Helper {
         new BukkitRunnable() {
             @Override
             public void run() {
-                e.remove();
+                    e.remove();
             }
         }.runTaskLater(InfernalMobs.instance, ticks);
     }
