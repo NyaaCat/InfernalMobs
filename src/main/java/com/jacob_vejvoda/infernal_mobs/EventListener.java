@@ -63,7 +63,7 @@ public class EventListener implements Listener {
         if (this.plugin.mobManager.mobMap.containsKey(mob.getUniqueId())) {
             for (final Entity entity : mob.getNearbyEntities(64.0, 64.0, 64.0)) {
                 if (entity instanceof Player) {
-                    GUI.refreshPlayerScoreboard((Player)entity);
+                    GUI.refreshPlayerScoreboard((Player) entity);
 //                    GUI.refreshBossBar((Player) entity);
                 }
             }
@@ -74,12 +74,12 @@ public class EventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onLightningStrike(final LightningStrikeEvent e) {
-        for (final Entity m : e.getLightning().getNearbyEntities(6.0, 6.0, 6.0)) {
-            if (this.plugin.mobManager.mobMap.containsKey(m.getUniqueId())) {
-                e.setCancelled(true);
-                break;
-            }
-        }
+//        for (final Entity m : e.getLightning().getNearbyEntities(6.0, 6.0, 6.0)) {
+//            if (this.plugin.mobManager.mobMap.containsKey(m.getUniqueId())) {
+//                e.setCancelled(true);
+//                break;
+//            }
+//        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -110,7 +110,7 @@ public class EventListener implements Listener {
                     ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
                 }
             }
-            if (ConfigReader.isEnhanceEnabled()){
+            if (ConfigReader.isEnhanceEnabled()) {
                 double resistedDamage = ConfigReader.getLevelConfig().calcResistedDamage(event.getDamage(), mob.getMobLevel());
                 event.setDamage(resistedDamage);
             }
@@ -119,12 +119,13 @@ public class EventListener implements Listener {
         if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
             // infernal mob attacked something
             double originDamage = event.getDamage();
-            if (!(trueVictim instanceof Player)) return;
-            GameMode gameMode = ((Player) trueVictim).getGameMode();
-            if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
-            for (EnumAbilities ab : mob.abilityList) {
-                ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+            if ((trueVictim instanceof Player)) {
+                GameMode gameMode = ((Player) trueVictim).getGameMode();
+                if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
+                for (EnumAbilities ab : mob.abilityList) {
+                    ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+                }
             }
             double extraDamage = event.getDamage() - originDamage;
             if (ConfigReader.isEnhanceEnabled()) {
@@ -179,9 +180,9 @@ public class EventListener implements Listener {
         Player killer = mobEntity.getKiller();
         if (determineShouldDrop(killer != null, (killer != null) && (killer.getGameMode() == GameMode.CREATIVE || killer.getGameMode() == GameMode.SPECTATOR))) {
             ItemStack drop;
-            if(!mob.isCustomMob){
+            if (!mob.isCustomMob) {
                 drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
-            }else {
+            } else {
                 drop = this.plugin.lootManager.getLootByName(killer, mob.customLoot);
             }
             if (drop != null && drop.getType() != Material.AIR) {

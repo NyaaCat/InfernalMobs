@@ -164,7 +164,7 @@ public class BossBarManager {
         if (entity instanceof LivingEntity) {
             BossBar bossBar = bossBarMap.get(entity);
             if (bossBar != null) {
-                refreshBar(bossBar, (LivingEntity) entity);
+                Bukkit.getScheduler().runTask(InfernalMobs.instance, ()-> refreshBar(bossBar, (LivingEntity) entity));
             }
         }
     }

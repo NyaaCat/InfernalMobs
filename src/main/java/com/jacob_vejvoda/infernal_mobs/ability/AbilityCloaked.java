@@ -9,6 +9,6 @@ import org.bukkit.potion.PotionEffectType;
 public class AbilityCloaked implements IAbility {
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
-        mobEntity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 40, 1), true);
+        mobEntity.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 400, 1), true);
     }
 }
