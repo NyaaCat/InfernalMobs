@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class BossBarManager {
@@ -76,7 +77,7 @@ public class BossBarManager {
                             if (bossBar == null) return;
                             if (!players.isEmpty()) {
                                 for (Player player : players) {
-                                    HashSet<BossBar> bossBars = playerBarMap.get(player);
+                                    HashSet<BossBar> bossBars = playerBarMap.computeIfAbsent(player, player1 -> new HashSet<>());
                                     if (bossBars.contains(bossBar)) {
                                         bossBar.addPlayer(player);
                                     } else {
