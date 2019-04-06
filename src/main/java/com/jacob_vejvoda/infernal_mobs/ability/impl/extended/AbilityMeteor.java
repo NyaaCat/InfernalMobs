@@ -22,8 +22,8 @@ public class AbilityMeteor extends AbilityProjectile {
         this.onPlayerAttackChance = 0.1;
         this.perCycleChance = 0.3;
         this.projectileType = Fireball.class;
-        this.mainSpeed = 4;
-        this.extraSpeedShift = -1;
+        this.mainSpeed = 0.0001;
+        this.extraSpeedShift = -0.00005;
     }
 
     @Override
@@ -33,21 +33,25 @@ public class AbilityMeteor extends AbilityProjectile {
                 LaunchTask poll;
                 while ((poll = standby.poll()) != null) {
                     Vector vector = Helper.unitDirectionVector(poll.projectileSource.getLocation().toVector(), poll.victim.getLocation().toVector());
+                    vector.multiply(mainSpeed+extraSpeedShift);
                     launchExtraProjectiles(vector, poll.projectileSource, target);
                 }
             }
         }, 10);
-        Helper.removeEntityLater(projectile, 30);
+        if (projectile !=null){
+            Helper.removeEntityLater(projectile, 30);
+        }
     }
 
     @Override
     protected Projectile launch(LivingEntity mobEntity, Entity target, Vector vector, boolean isExtra) {
         if (!isExtra) {
             Location location = target.getLocation().clone();
-            location.add(0, 10, 0);
+            location.add(0, 30, 0);
+            location.setPitch(90);
             if (isClearSky(location)) {
                 ArmorStand armorStand = location.getWorld().spawn(location, ArmorStand.class, (e) -> {
-                    e.setVisible(false);
+                    e.setVisible(true);
                     e.setPersistent(false);
                     e.setCanPickupItems(false);
                     e.setGlowing(true);
@@ -56,15 +60,20 @@ public class AbilityMeteor extends AbilityProjectile {
                     e.setMarker(true);
                     e.setInvulnerable(true);
                     e.setGravity(false);
+                    e.setCollidable(false);
                 });
+                Helper.removeEntityLater(armorStand, 100);
                 LaunchTask task = new LaunchTask(mobEntity, armorStand, target);
                 standby.offer(task);
                 Vector fallVector = Helper.unitDirectionVector(armorStand.getLocation().toVector(), target.getLocation().toVector());
+                fallVector.multiply(mainSpeed);
                 if (armorStand.hasLineOfSight(target)) {
-                    Projectile projectile = armorStand.launchProjectile(this.projectileType, fallVector);
+                    Fireball projectile = armorStand.launchProjectile(Fireball.class, fallVector);
+                    projectile.setVelocity(fallVector);
+                    projectile.setDirection(fallVector);
                     projectile.setShooter(mobEntity);
-                    projectile.setGravity(true);
-                    Helper.removeEntityLater(projectile, 40);
+                    projectile.setGravity(false);
+//                    Helper.removeEntityLater(projectile, 40);
                     return projectile;
                 }else {
                     return null;
@@ -73,7 +82,13 @@ public class AbilityMeteor extends AbilityProjectile {
                 return null;
             }
         }else {
-            return mobEntity.launchProjectile(this.projectileType, vector);
+            if (!(mobEntity instanceof ArmorStand)) return null;
+            Fireball projectile = (Fireball) mobEntity.launchProjectile(this.projectileType, vector);
+            projectile.setVelocity(vector);
+            projectile.setDirection(vector);
+            projectile.setShooter(mobEntity);
+            projectile.setGravity(false);
+            return projectile;
         }
     }
 

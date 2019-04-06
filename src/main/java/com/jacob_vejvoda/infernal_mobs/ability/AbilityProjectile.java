@@ -18,10 +18,10 @@ public abstract class AbilityProjectile implements IAbility {
 
     protected int effectiveRange = 30;
     protected int extraProjectileAmount = 0;
-    protected double perCycleChance = 1;
+    protected double perCycleChance = 0.5;
     protected double onPlayerAttackChance = 1;
-    protected double mainSpeed = 5;
-    protected double extraSpeedShift = 0;
+    protected double mainSpeed = 1;
+    protected double extraSpeedShift = -0.5;
 
     protected Class<? extends Projectile> projectileType = Arrow.class;
 
@@ -90,6 +90,7 @@ public abstract class AbilityProjectile implements IAbility {
             // ((a cosδ)+(b sinδ))·sinθ + direction · cosθ
             Vector v = a.clone().multiply(Math.cos(det)).add(b.clone().multiply(Math.sin(det))).multiply(Math.sin(theta)).add(direction.clone().multiply(Math.cos(theta)));
             Projectile launch = launch(source, target, v, true);
+            if (launch == null) return;
             Helper.removeEntityLater(launch, 30);
         }
     }
