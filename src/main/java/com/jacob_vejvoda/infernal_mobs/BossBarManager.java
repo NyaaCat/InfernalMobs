@@ -76,7 +76,7 @@ public class BossBarManager {
                             if (bossBar == null) return;
                             if (!players.isEmpty()) {
                                 for (Player player : players) {
-                                    HashSet<BossBar> bossBars = playerBarMap.get(player);
+                                    HashSet<BossBar> bossBars = playerBarMap.computeIfAbsent(player, player1 -> new HashSet<>());
                                     if (bossBars.contains(bossBar)) {
                                         bossBar.addPlayer(player);
                                     } else {
@@ -164,7 +164,7 @@ public class BossBarManager {
         if (entity instanceof LivingEntity) {
             BossBar bossBar = bossBarMap.get(entity);
             if (bossBar != null) {
-                Bukkit.getScheduler().runTask(InfernalMobs.instance,()-> refreshBar(bossBar, (LivingEntity) entity));
+                refreshBar(bossBar, (LivingEntity) entity);
             }
         }
     }
