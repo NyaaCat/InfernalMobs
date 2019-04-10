@@ -1,7 +1,10 @@
 abilities:
   sprint:
+    __class__: com.jacob_vejvoda.infernal_mobs.config.AbilityConfig$Attr
     enabled: true
     levels:
       - 1
       - 2
       - 10-12
+    extra: []
+

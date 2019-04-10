@@ -6,16 +6,21 @@ import org.bukkit.entity.*;
 public class AbilityArcher extends AbilityProjectile {
 
     public AbilityArcher(){
-        this.projectileType = Arrow.class;
-        this.onPlayerAttackChance = 0.1;
-        this.perCycleChance = 0.1;
-        this.effectiveRange = 30;
-        this.extraProjectileAmount = 10;
-        this.extraSpeedShift = 0.1;
-        this.mainSpeed = 1;
+
     }
 
 //    @Override
+//    public void readExtra(String name) {
+//        this.projectileType = Arrow.class;
+//        this.onPlayerAttackChance = 0.1;
+//        this.perCycleChance = 0.1;
+//        this.effectiveRange = 30;
+//        this.extraProjectileAmount = 10;
+//        this.extraSpeedShift = 0.1;
+//        this.mainSpeed = 1;
+//    }
+
+    //    @Override
 //    public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
 //        if (Helper.possibility(0.8)) return;
 //        List<Player> candidates = new ArrayList<>();

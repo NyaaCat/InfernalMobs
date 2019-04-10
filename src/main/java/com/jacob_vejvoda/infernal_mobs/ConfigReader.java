@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.AbilityConfig;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
@@ -323,5 +324,9 @@ public class ConfigReader {
 
     public static int getMobRandomTick() {
         return cfg().getInt("mobRandomTick", 20);
+    }
+
+    public static AbilityConfig getAbilityConfig() {
+        return getLevelConfig().abilityConfig;
     }
 }

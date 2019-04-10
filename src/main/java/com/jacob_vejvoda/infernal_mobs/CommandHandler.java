@@ -57,6 +57,7 @@ public class CommandHandler implements CommandExecutor {
                 ConfigReader.getCustomMobConfig().load();
                 plugin.reloadLoot();
                 InfernalMobs.instance.reloadMainLoopTask();
+                EnumAbilities.reloadAbility();
                 sender.sendMessage("§eConfig reloaded!");
             } else if ("mobList".equalsIgnoreCase(subcommand)) {
                 sender.sendMessage("§6Mob List:");

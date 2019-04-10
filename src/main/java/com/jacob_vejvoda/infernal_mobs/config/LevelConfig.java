@@ -23,7 +23,7 @@ public class LevelConfig extends FileConfigure {
     Map<String, SpawnConfig> spawnConfig;
 
     @StandaloneConfig
-    AbilityConfig abilityConfig = new AbilityConfig();
+    public AbilityConfig abilityConfig = new AbilityConfig();
 
     @Override
     protected String getFileName() {

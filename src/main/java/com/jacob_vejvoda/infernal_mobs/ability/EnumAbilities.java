@@ -54,7 +54,14 @@ public enum EnumAbilities implements IAbility {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+        t.readExtra(this.name());
         instance = t;
+    }
+
+    public static void reloadAbility(){
+        for (EnumAbilities value : values()) {
+            value.readExtra(value.name());
+        }
     }
 
 
