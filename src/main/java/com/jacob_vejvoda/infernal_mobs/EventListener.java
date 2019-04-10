@@ -4,6 +4,7 @@ import cat.nyaa.nyaacore.Message;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -68,7 +69,7 @@ public class EventListener implements Listener {
                 }
             }
             Mob im = this.plugin.mobManager.mobMap.get(mob.getUniqueId());
-            BossBarManager.updateMob(im);
+            Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> BossBarManager.updateMob(im));
         }
     }
 
