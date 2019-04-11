@@ -1,7 +1,7 @@
 mobs:
   spiderking:
     __class__: com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig$CustomMob
-    name: SpiderKing # the name tag shows [prefix] SpiderKing [level] ... as the template defined in config
+    name: SpiderKing # the name tag shows [prefix] SpiderKing [level] ... as the template.yml defined in config
     type: SPIDER
     levels:
       - 5

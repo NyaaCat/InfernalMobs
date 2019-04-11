@@ -217,6 +217,7 @@ public class EventListener implements Listener {
                 mobName = event.getEntity().getType().name();
             }
             boolean broadcastToAllWorld = ConfigReader.isDeathMessageBroadcastAllWorld();
+            Message message = new Message("");
 
             if (this.plugin.getConfig().getList("deathMessages") != null) {
                 String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
@@ -225,58 +226,52 @@ public class EventListener implements Listener {
                 deathMessage = deathMessage.replace("{mob}", mobName);
                 ItemStack item = player.getInventory().getItemInMainHand();
                 if (item != null && !item.getType().equals(Material.AIR)) {
-                    if (broadcastToAllWorld) {
-                        new Message("")
-                                .append(deathMessage, item)
-                                .broadcast();
-                    } else {
-                        new Message("")
-                                .append(deathMessage, item)
-                                .broadcast(player.getLocation().getWorld());
-                    }
+                    message.append(deathMessage, item);
                 } else {
-                    if (broadcastToAllWorld) {
-                        new Message(
-                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                        ).broadcast();
-                    } else {
-                        new Message(
-                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                        ).broadcast(player.getLocation().getWorld());
-                    }
+                    message.append(deathMessage.replace("{itemName}", "fist")
+                            .replace("{itemName:0}", "fist"));
                 }
             } else {
                 System.out.println("No valid death messages found!");
             }
-
+            message.append("\n");
+            String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
             if (plugin.getConfig().isList("dropMessages") && selectedDropItem != null) {
-                String msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
-                msg = ChatColor.translateAlternateColorCodes('&', msg);
-                msg = msg.replace("{player}", playerName);
-                msg = msg.replace("{mob}", mobName);
-                if (broadcastToAllWorld) {
-                    new Message("")
-                            .append(msg, selectedDropItem)
-                            .broadcast();
-                } else {
-                    new Message("")
-                            .append(msg, selectedDropItem)
-                            .broadcast(player.getLocation().getWorld());
-                }
+                msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
+//                message.append(msg);
+//                if (broadcastToAllWorld) {
+//                    new Message("")
+//                            .append(msg, selectedDropItem)
+//                            .broadcast();
+//                } else {
+//                    new Message("")
+//                            .append(msg, selectedDropItem)
+//                            .broadcast(player.getLocation().getWorld());
+//                }
             }
 
             if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
-                String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
-                msg = ChatColor.translateAlternateColorCodes('&', msg);
-                msg = msg.replace("{player}", playerName);
-                msg = msg.replace("{mob}", mobName);
-                if (broadcastToAllWorld) {
-                    new Message(msg)
-                            .broadcast();
-                } else {
-                    new Message(msg)
-                            .broadcast(player.getLocation().getWorld());
-                }
+                msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
+//                if (broadcastToAllWorld) {
+//                    new Message(msg)
+//                            .broadcast();
+//                } else {
+//                    new Message(msg)
+//                            .broadcast(player.getLocation().getWorld());
+//                }
+            }
+            msg = ChatColor.translateAlternateColorCodes('&', msg);
+            msg = msg.replace("{player}", playerName);
+            msg = msg.replace("{mob}", mobName);
+            if (selectedDropItem == null){
+                message.append(msg);
+            }else {
+                message.append(msg,selectedDropItem);
+            }
+            if (broadcastToAllWorld){
+                Broadcaster.broadcastToAllWorld(message, player);
+            }else {
+                Broadcaster.broadcast(player.getLocation().getWorld(), message, player);
             }
         }
 

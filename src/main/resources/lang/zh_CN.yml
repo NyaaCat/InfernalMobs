@@ -1,0 +1,5 @@
+imi:
+  state_all: "&a将接收全部击杀提示"
+  state_self: "&a将只接收自己的击杀提示"
+  state_near: "&a将接收附近的击杀提示"
+  state_off: "&a将不接收任何击杀提示"

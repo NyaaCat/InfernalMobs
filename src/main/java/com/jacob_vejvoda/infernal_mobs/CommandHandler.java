@@ -53,8 +53,7 @@ public class CommandHandler implements CommandExecutor {
                 printHelp(sender);
             } else if ("reload".equalsIgnoreCase(subcommand)) {
                 plugin.reloadConfig();
-                ConfigReader.getLevelConfig().load();
-                ConfigReader.getCustomMobConfig().load();
+                ConfigReader.reload();
                 plugin.reloadLoot();
                 InfernalMobs.instance.reloadMainLoopTask();
                 EnumAbilities.reloadAbility();

@@ -49,7 +49,10 @@ public class InfernalMobs extends JavaPlugin {
         this.lootManager = new LootManager(this);
         this.getCommand("infernalmobs").setExecutor(cmd);
         this.getServer().getPluginManager().registerEvents(this.events, this);
-
+        I18n i18n = new I18n();
+        i18n.load();
+        ImiCommand imiCommand = new ImiCommand(this, i18n);
+        this.getCommand("infernalinfo").setExecutor(imiCommand);
 
         // Start the main loop
 

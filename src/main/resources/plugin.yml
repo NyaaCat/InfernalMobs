@@ -11,3 +11,17 @@ commands:
     usage: /<command>
     permission: infernal_mobs.commands
     permission-message: You don't have <permission>
+  infernalinfo:
+    aliases: [imi]
+    description: Toggle infernal mob kill broadcast
+    usage: /imi <mode>
+    permission: infernal_mobs.imi
+    permission-message: You don't have <permission>
+
+permissions:
+  infernal_mobs.commads:
+    description: infernal mob's admin command
+    default: op
+  infeinal_mobs.imi:
+    description: switch between different broadcast receive modes.
+    default: true

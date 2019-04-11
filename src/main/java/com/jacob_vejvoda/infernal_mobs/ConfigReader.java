@@ -2,6 +2,7 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.config.AbilityConfig;
+import com.jacob_vejvoda.infernal_mobs.config.BroadcastConfig;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
@@ -19,6 +20,7 @@ import static org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 public class ConfigReader {
     private static LevelConfig levelConfig;
     private static CustomMobConfig customMobConfig;
+    private static BroadcastConfig broadcastConfig;
 
     private static ConfigurationSection cfg() {
         return InfernalMobs.instance.getConfig();
@@ -328,5 +330,26 @@ public class ConfigReader {
 
     public static AbilityConfig getAbilityConfig() {
         return getLevelConfig().abilityConfig;
+    }
+
+    public static BroadcastConfig getBroadcastConfig(){
+        return broadcastConfig == null? loadBroadcastConfig():broadcastConfig;
+    }
+
+    private static BroadcastConfig loadBroadcastConfig() {
+        broadcastConfig = new BroadcastConfig();
+        broadcastConfig.load();
+        return broadcastConfig;
+    }
+
+
+    public static void reload() {
+        getLevelConfig().load();
+        getCustomMobConfig().load();
+        getBroadcastConfig().load();
+    }
+
+    public static String getLanguage() {
+        return cfg().getString("language");
     }
 }
