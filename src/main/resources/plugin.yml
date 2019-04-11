@@ -22,6 +22,6 @@ permissions:
   infernal_mobs.commads:
     description: infernal mob's admin command
     default: op
-  infeinal_mobs.imi:
+  infernal_mobs.imi:
     description: switch between different broadcast receive modes.
     default: true
