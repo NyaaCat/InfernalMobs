@@ -2,6 +2,7 @@ package com.jacob_vejvoda.infernal_mobs.ability;
 
 import com.jacob_vejvoda.infernal_mobs.ability.impl.*;
 import com.jacob_vejvoda.infernal_mobs.ability.impl.extended.AbilityMeteor;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.extended.AbilityUltraStrike;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.entity.LivingEntity;
@@ -43,7 +44,8 @@ public enum EnumAbilities implements IAbility {
     MORPH("morph", AbilityMorph.class),
     GHOST("ghost", AbilityGhost.class),
     CONFUSING("confusing", AbilityConfusing.class),
-    METEOR("meteor", AbilityMeteor.class);
+    METEOR("meteor", AbilityMeteor.class),
+    ULTRASTRIKE("ultrastrike", AbilityUltraStrike.class);
 
     private final IAbility instance;
 
