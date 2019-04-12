@@ -119,24 +119,32 @@ public class EventListener implements Listener {
 
         if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
             // infernal mob attacked something
-
+            EntityDamageEvent.DamageCause cause = event.getCause();
             double originDamage = event.getDamage();
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
-            if ((trueVictim instanceof Player)) {
-                GameMode gameMode = ((Player) trueVictim).getGameMode();
-                if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
-                for (EnumAbilities ab : mob.abilityList) {
-                    ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+            if (isValidDamageCause(cause, mob)) {
+                if ((trueVictim instanceof Player)) {
+                    GameMode gameMode = ((Player) trueVictim).getGameMode();
+                    if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
+                    for (EnumAbilities ab : mob.abilityList) {
+                        ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+                    }
+                }
+                double extraDamage = event.getDamage() - originDamage;
+                if (ConfigReader.isEnhanceEnabled()) {
+                    LevelConfig levelConfig = ConfigReader.getLevelConfig();
+                    double damage = levelConfig.getDamage(originDamage, mob.getMobLevel());
+                    damage += extraDamage;
+                    event.setDamage(damage);
                 }
             }
-            double extraDamage = event.getDamage() - originDamage;
-            if (ConfigReader.isEnhanceEnabled()) {
-                LevelConfig levelConfig = ConfigReader.getLevelConfig();
-                double damage = levelConfig.getDamage(originDamage, mob.getMobLevel());
-                damage += extraDamage;
-                event.setDamage(damage);
-            }
         }
+    }
+
+    private boolean isValidDamageCause(EntityDamageEvent.DamageCause cause, Mob mob) {
+        return cause.equals(EntityDamageEvent.DamageCause.ENTITY_ATTACK) ||
+                cause.equals(EntityDamageEvent.DamageCause.PROJECTILE) ||
+                cause.equals(EntityDamageEvent.DamageCause.ENTITY_EXPLOSION);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -264,14 +272,14 @@ public class EventListener implements Listener {
             msg = ChatColor.translateAlternateColorCodes('&', msg);
             msg = msg.replace("{player}", playerName);
             msg = msg.replace("{mob}", mobName);
-            if (selectedDropItem == null){
+            if (selectedDropItem == null) {
                 message.append(msg);
-            }else {
-                message.append(msg,selectedDropItem);
+            } else {
+                message.append(msg, selectedDropItem);
             }
-            if (broadcastToAllWorld){
+            if (broadcastToAllWorld) {
                 Broadcaster.broadcastToAllWorld(message, player);
-            }else {
+            } else {
                 Broadcaster.broadcast(player.getLocation().getWorld(), message, player);
             }
         }

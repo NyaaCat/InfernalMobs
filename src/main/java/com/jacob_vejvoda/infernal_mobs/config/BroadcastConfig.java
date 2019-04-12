@@ -19,6 +19,7 @@ public class BroadcastConfig extends FileConfigure {
 
     public void setReceivetype(String uuid, ReceiveType receiveType){
         broadcastSettings.put(uuid, receiveType);
+        this.save();
     }
 
     public ReceiveType getReceiveType(String uuid){

@@ -123,8 +123,13 @@ public class AbilityUltraStrike implements IAbility {
                         if (!livingEntity.equals(mobEntity)) {
                             double damage = ConfigReader.getLevelConfig().getDamage(0, mob.getMobLevel());
                             damage = damage * this.damageMultiplier;
-                            livingEntity.damage(damage);
-                            livingEntity.setLastDamageCause(new EntityDamageByEntityEvent(mobEntity, livingEntity, EntityDamageEvent.DamageCause.MAGIC, damage));
+                            double distance = livingEntity.getLocation().distance(location);
+                            damage = Math.max(0, (1 - (distance / ((double) explodeRange))) * damage);
+//                            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(mobEntity, livingEntity, EntityDamageEvent.DamageCause.MAGIC, damage);
+                            livingEntity.damage(damage,livingEntity);
+//                            livingEntity.setLastDamageCause(event);
+//                            livingEntity.getServer().getPluginManager().callEvent(event);
+//                            livingEntity.damage();
 //                            System.out.println(livingEntity.getLastDamage());
                         }
                     });
