@@ -15,15 +15,15 @@ public class BroadcastConfig extends FileConfigure {
     @Serializable
     int nearbyRange = 100;
     @Serializable
-    Map<String, ReceiveType> broadcastSettings = new LinkedHashMap<>();
+    Map<String, Integer> broadcastSettings = new LinkedHashMap<>();
 
     public void setReceivetype(String uuid, ReceiveType receiveType){
-        broadcastSettings.put(uuid, receiveType);
+        broadcastSettings.put(uuid, receiveType.num);
         this.save();
     }
 
     public ReceiveType getReceiveType(String uuid){
-        return broadcastSettings.computeIfAbsent(uuid, s -> ReceiveType.ALL);
+        return ReceiveType.forNum(broadcastSettings.computeIfAbsent(uuid, s -> ReceiveType.ALL.num));
     }
 
     @Override
@@ -79,7 +79,21 @@ public class BroadcastConfig extends FileConfigure {
         message.send(sender);
     }
 
-    public enum ReceiveType implements ISerializable{
-        ALL, NEARBY, SELF_ONLY, OFF
+    public enum ReceiveType {
+        ALL(0), NEARBY(1), SELF_ONLY(2), OFF(3);
+        int num;
+        ReceiveType(int in){
+            num = in;
+        }
+
+        public static ReceiveType forNum(Integer num) {
+            ReceiveType[] values = values();
+            for (ReceiveType value : values) {
+                if (value.num == num) {
+                    return value;
+                }
+            }
+            return ALL;
+        }
     }
 }
