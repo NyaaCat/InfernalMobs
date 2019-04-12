@@ -1,6 +1,7 @@
 package com.jacob_vejvoda.infernal_mobs.ability.impl.extended;
 
 import cat.nyaa.nyaacore.configuration.ISerializable;
+import com.jacob_vejvoda.infernal_mobs.ConfigReader;
 import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.ability.IAbility;
@@ -12,6 +13,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -35,7 +38,7 @@ public class AbilityUltraStrike implements IAbility {
     public int nearbyRange = 30;
 
     @Property
-    public double damage = 20;
+    public double damageMultiplier = 20;
 
     @Property
     public int delay = 60;
@@ -57,15 +60,15 @@ public class AbilityUltraStrike implements IAbility {
                     i--;
                     continue;
                 }
-                summonUltraStrike(location, mobEntity);
+                summonUltraStrike(location, mobEntity, mob);
             } else {
                 int x = Helper.rand(-nearbyRange, nearbyRange);
                 int z = Helper.rand(-nearbyRange, nearbyRange);
                 Location location = mobEntity.getLocation().add(new Vector(x, 0, z));
                 int originalLocationY = location.getBlockY();
                 findOpenArea(location);
-                if (location.getBlockY() - originalLocationY< 10) {
-                    summonUltraStrike(location, mobEntity);
+                if (location.getBlockY() - originalLocationY < 10) {
+                    summonUltraStrike(location, mobEntity, mob);
                 } else {
                     i--;
                 }
@@ -90,26 +93,26 @@ public class AbilityUltraStrike implements IAbility {
         }
     }
 
-    private void summonUltraStrike(Location location, LivingEntity mobEntity) {
+    private void summonUltraStrike(Location location, LivingEntity mobEntity, Mob mob) {
         try {
             double x = particle.delta.get(0);
             double y = particle.delta.get(1);
             double z = particle.delta.get(2);
             location.getWorld().spawnParticle(Particle.valueOf(particle.name), location, particle.amount, x, y, z, particle.speed);
-            for (int i = 0; i < delay / 20 ; i++) {
-                Bukkit.getScheduler().runTaskLater(InfernalMobs.instance, ()->{
+            for (int i = 0; i < delay / 20; i++) {
+                Bukkit.getScheduler().runTaskLater(InfernalMobs.instance, () -> {
                     location.getWorld().playSound(location, Sound.BLOCK_NOTE_BLOCK_CHIME, 1, 1);
-                }, i*20);
+                }, i * 20);
             }
             Bukkit.getScheduler().runTaskLater(InfernalMobs.instance, () -> {
-                boom(location, mobEntity);
+                boom(location, mobEntity, mob);
             }, delay);
         } catch (Exception e) {
             InfernalMobs.instance.getLogger().log(Level.WARNING, "config error");
         }
     }
 
-    private void boom(Location location, LivingEntity mobEntity) {
+    private void boom(Location location, LivingEntity mobEntity, Mob mob) {
         Collection<Entity> nearbyEntities = location.getWorld().getNearbyEntities(location, explodeRange, explodeRange, explodeRange);
         location.getWorld().playSound(location, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 1, 1);
         location.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, location, 1);
@@ -117,8 +120,13 @@ public class AbilityUltraStrike implements IAbility {
             nearbyEntities.stream().filter(entity -> entity instanceof LivingEntity)
                     .map(entity -> ((LivingEntity) entity))
                     .forEach(livingEntity -> {
-                        if (!livingEntity.equals(mobEntity))
-                            livingEntity.damage(damage,mobEntity);
+                        if (!livingEntity.equals(mobEntity)) {
+                            double damage = ConfigReader.getLevelConfig().getDamage(0, mob.getMobLevel());
+                            damage = damage * this.damageMultiplier;
+                            livingEntity.damage(damage);
+                            livingEntity.setLastDamageCause(new EntityDamageByEntityEvent(mobEntity, livingEntity, EntityDamageEvent.DamageCause.MAGIC, damage));
+//                            System.out.println(livingEntity.getLastDamage());
+                        }
                     });
         }
     }

@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 
 public interface IAbility {
     default void readExtra(String abilityName) {
-        List<Field> properties = getProperties(this.getClass());
+        EnumAbilities enumAbilities = EnumAbilities.valueOf(abilityName.toUpperCase());
+        List<Field> properties = getProperties(enumAbilities.getInstance().getClass());
         AbilityConfig.Attr attrForAbility = ConfigReader.getAbilityConfig().getAttrForAbility(abilityName);
         if (properties.isEmpty())return;
         try {
@@ -29,9 +30,9 @@ public interface IAbility {
                 if (annotation != null) {
                     String name = field.getName();
                     field.setAccessible(true);
-                    Object o = field.get(this);
+                    Object o = field.get(enumAbilities.getInstance());
                     Object extra = attrForAbility.getExtra(name);
-                    field.set(this, extra == null ? o : extra);
+                    field.set(enumAbilities.getInstance(), extra == null ? o : extra);
                 }
             }
         } catch (IllegalAccessException e) {

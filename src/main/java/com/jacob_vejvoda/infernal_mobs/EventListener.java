@@ -119,6 +119,7 @@ public class EventListener implements Listener {
 
         if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
             // infernal mob attacked something
+
             double originDamage = event.getDamage();
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
             if ((trueVictim instanceof Player)) {
