@@ -10,11 +10,12 @@ import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -43,6 +44,8 @@ public class AbilityUltraStrike implements IAbility {
     @Property
     public int delay = 60;
 
+    ArmorStand armorStand;
+
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
         if (!Helper.possibility(possibility)) return;
@@ -52,6 +55,22 @@ public class AbilityUltraStrike implements IAbility {
         Collections.shuffle(nearbyEntities);
         Queue<Entity> queue = new LinkedList<>(nearbyEntities);
 
+        if (armorStand == null) {
+            Location loc = mobEntity.getLocation();
+            armorStand = loc.getWorld().spawn(loc, ArmorStand.class, (e) -> {
+                e.setVisible(false);
+                e.setPersistent(false);
+                e.setCanPickupItems(false);
+                e.setGlowing(false);
+                e.setBasePlate(false);
+                e.setArms(false);
+                e.setMarker(true);
+                e.setInvulnerable(true);
+                e.setGravity(false);
+                e.setCollidable(false);
+                e.setMetadata("im_ultrastrike_helper", new FixedMetadataValue(InfernalMobs.instance, true));
+            });
+        }
         for (int i = 0; i < amount; i++) {
             Entity poll = queue.poll();
             if (poll != null) {
@@ -93,6 +112,11 @@ public class AbilityUltraStrike implements IAbility {
         }
     }
 
+    @Override
+    public void onDeath(LivingEntity mobEntity, Mob mob, Player killer, EntityDeathEvent ev) {
+        Helper.removeEntityLater(armorStand, 1);
+    }
+
     private void summonUltraStrike(Location location, LivingEntity mobEntity, Mob mob) {
         try {
             double x = particle.delta.get(0);
@@ -126,7 +150,8 @@ public class AbilityUltraStrike implements IAbility {
                             double distance = livingEntity.getLocation().distance(location);
                             damage = Math.max(0, (1 - (distance / ((double) explodeRange))) * damage);
 //                            EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(mobEntity, livingEntity, EntityDamageEvent.DamageCause.MAGIC, damage);
-                            livingEntity.damage(damage,livingEntity);
+                            armorStand.setCustomName(mobEntity.getCustomName());
+                            livingEntity.damage(damage, armorStand);
 //                            livingEntity.setLastDamageCause(event);
 //                            livingEntity.getServer().getPluginManager().callEvent(event);
 //                            livingEntity.damage();

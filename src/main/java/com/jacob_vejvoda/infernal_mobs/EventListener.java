@@ -122,7 +122,7 @@ public class EventListener implements Listener {
             EntityDamageEvent.DamageCause cause = event.getCause();
             double originDamage = event.getDamage();
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
-            if (isValidDamageCause(cause, mob)) {
+             if (isValidDamageCause(cause, mob)) {
                 if ((trueVictim instanceof Player)) {
                     GameMode gameMode = ((Player) trueVictim).getGameMode();
                     if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
