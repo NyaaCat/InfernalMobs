@@ -37,7 +37,7 @@ public abstract class AbilityProjectile implements IAbility {
         List<Player> nearbyPlayers = mobEntity.getNearbyEntities(effectiveRange, effectiveRange, effectiveRange).stream()
                 .filter(entity -> entity instanceof Player)
                 .map(entity -> ((Player) entity))
-                .filter(this::isGamemodeValid)
+                .filter(Helper::validGamemode)
                 .collect(Collectors.toList());
         if (!nearbyPlayers.isEmpty()) {
             nearbyPlayers.forEach(player -> {
@@ -65,11 +65,6 @@ public abstract class AbilityProjectile implements IAbility {
         Projectile pro = launch(mobEntity, attacker, vector, false);
         postLaunch(pro,mobEntity ,attacker );
         launchExtraProjectiles(vector, mobEntity, attacker);
-    }
-
-    private boolean isGamemodeValid(Player entity) {
-        GameMode gameMode = entity.getGameMode();
-        return !gameMode.equals(GameMode.CREATIVE) && !gameMode.equals(GameMode.SPECTATOR);
     }
 
     protected abstract void postLaunch(Projectile projectile, LivingEntity source, Entity target);

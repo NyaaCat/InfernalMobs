@@ -47,7 +47,7 @@ public class AbilityUltraStrike implements IAbility {
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
         if (!Helper.possibility(possibility)) return;
         List<Entity> nearbyEntities = mobEntity.getNearbyEntities(nearbyRange, nearbyRange, nearbyRange)
-                .stream().filter(entity -> entity instanceof Player)
+                .stream().filter(entity -> entity instanceof Player && Helper.validGamemode(((Player) entity)))
                 .collect(Collectors.toList());
         Collections.shuffle(nearbyEntities);
         Queue<Entity> queue = new LinkedList<>(nearbyEntities);

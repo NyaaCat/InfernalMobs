@@ -27,7 +27,7 @@ public class AbilityGravity implements IAbility {
         Location mobLocation = mobEntity.getLocation();
         mobLocation.getWorld().getPlayers().stream()
                 .filter(p -> p.getLocation().distanceSquared(mobLocation) <= EFFECTIVE_RANGE_SQUARED)
-                .filter(p -> p.getGameMode() != GameMode.CREATIVE && p.getGameMode() != GameMode.SPECTATOR)
+                .filter(p -> Helper.validGamemode(p))
                 .filter(p -> {
                     Location t = p.getLocation().clone();
                     t.add(0,-2,0);

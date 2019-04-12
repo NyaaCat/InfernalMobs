@@ -180,7 +180,7 @@ public class EventListener implements Listener {
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
-        if (determineShouldDrop(killer != null, (killer != null) && (killer.getGameMode() == GameMode.CREATIVE || killer.getGameMode() == GameMode.SPECTATOR))) {
+        if (determineShouldDrop(killer != null, (killer != null) && (Helper.validGamemode(killer)))) {
             ItemStack drop;
             if (!mob.isCustomMob) {
                 drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());

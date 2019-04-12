@@ -146,4 +146,9 @@ public class Helper {
         if (vec.lengthSquared() == 0) return new Vector(0,0,0);
         return vec.normalize();
     }
+
+    public static boolean validGamemode(Player entity) {
+        GameMode gameMode = entity.getGameMode();
+        return gameMode.equals(GameMode.SURVIVAL) || gameMode.equals(GameMode.ADVENTURE);
+    }
 }

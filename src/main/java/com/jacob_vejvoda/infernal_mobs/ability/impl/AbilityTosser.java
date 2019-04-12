@@ -20,7 +20,7 @@ public class AbilityTosser implements IAbility {
                 .filter(p -> p.getLocation().distanceSquared(mobLocation) < EFFECTIVE_RANGE_SQUARED)
                 .filter(p -> p.getLocation().distanceSquared(mobLocation) > 4)
                 .filter(p -> !p.isSneaking())
-                .filter(p -> p.getGameMode() != GameMode.CREATIVE && p.getGameMode() != GameMode.SPECTATOR)
+                .filter(p -> Helper.validGamemode(p))
                 .forEach(p -> {
                     Vector v = mobEntity.getEyeLocation().toVector().clone().subtract(p.getLocation().toVector());
                     double len = v.length();
