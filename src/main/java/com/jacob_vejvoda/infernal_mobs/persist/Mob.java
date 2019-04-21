@@ -3,6 +3,7 @@ package com.jacob_vejvoda.infernal_mobs.persist;
 import com.jacob_vejvoda.infernal_mobs.Helper;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import org.bukkit.Material;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class Mob {
     public int maxMamaInfernal = 0;
     public boolean isCustomMob = false;
     public String customLoot;
+    public EntityDamageByEntityEvent lastDamageCause;
 
     public Mob(UUID entityId, int lives, ParticleEffect particleEffect, int level, List<EnumAbilities> abilityList){
         this.entityId = entityId;

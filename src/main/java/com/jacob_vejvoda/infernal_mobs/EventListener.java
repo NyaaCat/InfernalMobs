@@ -4,15 +4,13 @@ import cat.nyaa.nyaacore.Message;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import com.jacob_vejvoda.infernal_mobs.utils.ArmorStandUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -21,6 +19,8 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -105,6 +105,7 @@ public class EventListener implements Listener {
             // something attacked infernal mob
             if (!(trueAttacker instanceof Player)) return;
             Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
+            mob.lastDamageCause = event;
             GameMode gameMode = ((Player) trueAttacker).getGameMode();
             if (gameMode != GameMode.CREATIVE && gameMode != GameMode.SPECTATOR) {
                 for (EnumAbilities ab : mob.abilityList) {
@@ -122,7 +123,7 @@ public class EventListener implements Listener {
             EntityDamageEvent.DamageCause cause = event.getCause();
             double originDamage = event.getDamage();
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
-             if (isValidDamageCause(cause, mob)) {
+            if (isValidDamageCause(cause, mob)) {
                 if ((trueVictim instanceof Player)) {
                     GameMode gameMode = ((Player) trueVictim).getGameMode();
                     if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
@@ -176,18 +177,51 @@ public class EventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(final EntityDeathEvent event) {
+        if (event.getEntity() instanceof Bat) {
+            try {
+                LivingEntity entity = event.getEntity();
+                List<MetadataValue> metadata = entity.getMetadata("im-drop");
+                if (!metadata.isEmpty()) {
+                    MetadataValue metadataValue = metadata.get(0);
+                    List<ItemStack> value = (List<ItemStack>) metadataValue.value();
+                    event.getDrops().clear();
+                    event.getDrops().addAll(value);
+                }
+            } catch (Exception e) {
+
+            }
+        }
         UUID id = event.getEntity().getUniqueId();
         Mob mob = plugin.mobManager.mobMap.get(id);
         if (mob == null) return;
         LivingEntity mobEntity = event.getEntity();
 
-        for (EnumAbilities ab : mob.abilityList) {
-            ab.onDeath(mobEntity, mob, mobEntity.getKiller(), event);
-        }
 
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
+        Bat bat = null;
+        if (killer == null) {
+            EntityDamageByEntityEvent lastDamageCause = mob.lastDamageCause;
+            if (lastDamageCause != null) {
+                Entity damager = lastDamageCause.getDamager();
+                if (damager instanceof Projectile) {
+                    ProjectileSource shooter = ((Projectile) damager).getShooter();
+                    if (shooter instanceof Player) {
+                        killer = (Player) shooter;
+                    }
+                } else if (damager instanceof Player) {
+                    killer = ((Player) damager);
+                }
+                event.getEntity().setLastDamageCause(lastDamageCause);
+                bat = ArmorStandUtil.asVictim(mobEntity);
+                bat.setCustomName(mobEntity.getCustomName());
+//                Bukkit.getServer().getPluginManager().callEvent(new EntityDeathEvent(armorStand, dropClone));
+            }
+        }
+        for (EnumAbilities ab : mob.abilityList) {
+            ab.onDeath(mobEntity, mob, killer, event);
+        }
         if (determineShouldDrop(killer != null, (killer != null) && (Helper.validGamemode(killer)))) {
             ItemStack drop;
             if (!mob.isCustomMob) {
@@ -216,8 +250,8 @@ public class EventListener implements Listener {
         }
 
         // broadcast death message TODO use ConfigReader
-        if (ConfigReader.isMobDeathMessageEnabled() && event.getEntity().getKiller() != null) {
-            Player player = event.getEntity().getKiller();
+        if (ConfigReader.isMobDeathMessageEnabled() && killer != null) {
+            Player player = killer;
             String playerName = player.getName();
             String mobName;
             if (event.getEntity().getCustomName() != null) {
@@ -282,6 +316,13 @@ public class EventListener implements Listener {
             } else {
                 Broadcaster.broadcast(player.getLocation().getWorld(), message, player);
             }
+        }
+        if (bat != null) {
+            List<ItemStack> drops = event.getDrops();
+            List<ItemStack> dropClone = new ArrayList<>(drops);
+            drops.clear();
+            bat.setMetadata("im-drop", new FixedMetadataValue(InfernalMobs.instance, dropClone));
+            bat.damage(bat.getHealth() * 10, killer);
         }
 
         plugin.mobManager.mobMap.remove(id);
