@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class BroadcastConfig extends FileConfigure {
     @Serializable
@@ -17,13 +18,16 @@ public class BroadcastConfig extends FileConfigure {
     @Serializable
     Map<String, Integer> broadcastSettings = new LinkedHashMap<>();
 
+    @Serializable
+    int defaultType = ReceiveType.NEARBY.num;
+
     public void setReceivetype(String uuid, ReceiveType receiveType){
         broadcastSettings.put(uuid, receiveType.num);
         this.save();
     }
 
     public ReceiveType getReceiveType(String uuid){
-        return ReceiveType.forNum(broadcastSettings.computeIfAbsent(uuid, s -> ReceiveType.ALL.num));
+        return ReceiveType.forNum(broadcastSettings.computeIfAbsent(uuid, s -> defaultType));
     }
 
     @Override
@@ -77,6 +81,13 @@ public class BroadcastConfig extends FileConfigure {
                 break;
         }
         message.send(sender);
+    }
+
+    public void globalSetting(ReceiveType receiveType) {
+        Objects.requireNonNull(receiveType);
+        defaultType = receiveType.num;
+        broadcastSettings.entrySet().forEach(entry -> entry.setValue(receiveType.num));
+        save();
     }
 
     public enum ReceiveType {

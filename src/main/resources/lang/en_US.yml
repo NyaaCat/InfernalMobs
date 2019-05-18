@@ -3,3 +3,7 @@ imi:
   state_self: "&a将只接收自己的击杀提示"
   state_near: "&a将接收附近的击杀提示"
   state_off: "&a将不接收任何击杀提示"
+  global_success: "&a成功设置提示信息模式为: %s"
+error:
+  permission: "你没有足够的权限"
+    wrong_argument: "参数错误"
