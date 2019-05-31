@@ -6,4 +6,4 @@ imi:
   global_success: "&a成功设置提示信息模式为: %s"
 error:
   permission: "你没有足够的权限"
-    wrong_argument: "参数错误"
+  wrong_argument: "参数错误"
