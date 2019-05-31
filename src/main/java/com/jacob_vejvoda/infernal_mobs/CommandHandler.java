@@ -162,7 +162,9 @@ public class CommandHandler implements CommandExecutor {
                     final ItemStack gottenLoot = plugin.lootManager.getRandomLoot(player, powers);
                     if (gottenLoot != null && gottenLoot.getType() != Material.AIR) {
                         player.getInventory().addItem(gottenLoot);
-                        sender.sendMessage("§eGave you some random loot!");
+                        if (sender.isOp()) {
+                            sender.sendMessage("§eGave you some random loot!");
+                        }
                     }
                 } else {
                     String name = arg.nextString();
@@ -197,14 +199,18 @@ public class CommandHandler implements CommandExecutor {
                     Map<String, CustomMobConfig.CustomMob> customMobs = ConfigReader.getCustomMobConfig().getCustomMobs();
                     Set<String> names = customMobs.keySet();
                     if (names.isEmpty()){
-                        sender.sendMessage("no custom mobs found");
+                        if (sender.isOp()){
+                            sender.sendMessage("no custom mobs found");
+                        }
                     }else {
-                        String message = "&aHere "+ (names.size() == 1? "is ": "are ")+names.size()+" mob"+(names.size()==1?"":"s");
-                        message = ChatColor.translateAlternateColorCodes('&', message);
-                        sender.sendMessage(message);
-                        names.forEach(s -> {
-                            sender.sendMessage(s);
-                        });
+                        if (sender.isOp()){
+                            String message = "&aHere "+ (names.size() == 1? "is ": "are ")+names.size()+" mob"+(names.size()==1?"":"s");
+                            message = ChatColor.translateAlternateColorCodes('&', message);
+                            sender.sendMessage(message);
+                            names.forEach(s -> {
+                                sender.sendMessage(s);
+                            });
+                        }
                     }
                     return true;
                 }
@@ -235,14 +241,18 @@ public class CommandHandler implements CommandExecutor {
                     Map<String, CustomMobConfig.CustomMob> customMobs = ConfigReader.getCustomMobConfig().getCustomMobs();
                     Set<String> names = customMobs.keySet();
                     if (names.isEmpty()){
-                        sender.sendMessage("no custom mobs found");
+                        if (sender.isOp()){
+                            sender.sendMessage("no custom mobs found");
+                        }
                     }else {
-                        String message = "&aHere "+ (names.size() == 1? "is ": "are ")+names.size()+" mob"+(names.size()==1?"":"s");
-                        message = ChatColor.translateAlternateColorCodes('&', message);
-                        sender.sendMessage(message);
-                        names.forEach(s -> {
-                            sender.sendMessage(s);
-                        });
+                        if (sender.isOp()) {
+                            String message = "&aHere " + (names.size() == 1 ? "is " : "are ") + names.size() + " mob" + (names.size() == 1 ? "" : "s");
+                            message = ChatColor.translateAlternateColorCodes('&', message);
+                            sender.sendMessage(message);
+                            names.forEach(s -> {
+                                sender.sendMessage(s);
+                            });
+                        }
                     }
                     return true;
                 }
