@@ -15,6 +15,9 @@ public class Broadcaster {
     }
 
     private static boolean shouldReceiveMessage(Player player, Entity source) {
+        if (!player.getWorld().equals(source.getWorld())){
+            return false;
+        }
         BroadcastConfig broadcastConfig = ConfigReader.getBroadcastConfig();
         BroadcastConfig.ReceiveType receiveType = broadcastConfig.getReceiveType(player.getUniqueId().toString());
         switch (receiveType){
