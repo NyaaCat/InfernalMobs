@@ -171,7 +171,9 @@ public class CommandHandler implements CommandExecutor {
                     ItemStack i = plugin.lootManager.getLootByName(asPlayer(sender), name);
                     if (i != null && i.getType() != Material.AIR) {
                         asPlayer(sender).getInventory().addItem(i);
-                        sender.sendMessage("§eGave you the loot: " + name);
+                        if (sender.isOp()) {
+                            sender.sendMessage("§eGave you the loot: " + name);
+                        }
                     }
                 }
             } else if ("spawn".equalsIgnoreCase(subcommand)) {
