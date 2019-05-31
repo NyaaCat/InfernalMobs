@@ -125,18 +125,20 @@ public class AbilityMeteor extends AbilityProjectile {
     }
 
     private boolean isClearSky(Location location) {
-        Location from = location.clone().subtract(5, 0, 5);
-        Location to = location.clone().add(5, 0, 5);
-        World world = location.getWorld();
-        while (!from.equals(to)) {
-            if (!world.getBlockAt(from).getType().equals(Material.AIR))
-                return false;
-            if (!world.getBlockAt(to).getType().equals(Material.AIR))
-                return false;
-            from.add(1, 0, 1);
-            to.subtract(1, 0, 1);
-        }
         return true;
+        //todo: this function can cause server stuck.
+//        Location from = location.clone().subtract(5, 0, 5);
+//        Location to = location.clone().add(5, 0, 5);
+//        World world = location.getWorld();
+//        while (!from.equals(to)) {
+//            if (!world.getBlockAt(from).getType().equals(Material.AIR))
+//                return false;
+//            if (!world.getBlockAt(to).getType().equals(Material.AIR))
+//                return false;
+//            from.add(1, 0, 1);
+//            to.subtract(1, 0, 1);
+//        }
+//        return true;
     }
 
     private class LaunchTask {

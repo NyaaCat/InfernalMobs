@@ -85,7 +85,7 @@ public class AbilityUltraStrike implements IAbility {
                 int z = Helper.rand(-nearbyRange, nearbyRange);
                 Location location = mobEntity.getLocation().add(new Vector(x, 0, z));
                 int originalLocationY = location.getBlockY();
-                findOpenArea(location);
+//                findOpenArea(location);
                 if (location.getBlockY() - originalLocationY < 10) {
                     summonUltraStrike(location, mobEntity, mob);
                 } else {
@@ -94,7 +94,7 @@ public class AbilityUltraStrike implements IAbility {
             }
         }
     }
-
+    //todo: this function can cause server stuck.
     private void findOpenArea(Location location) {
         while (location.getBlockY() < 255) {
             Block block = location.getBlock();
