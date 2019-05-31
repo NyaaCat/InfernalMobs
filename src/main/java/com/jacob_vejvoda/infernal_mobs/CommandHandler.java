@@ -1,5 +1,6 @@
 package com.jacob_vejvoda.infernal_mobs;
 
+import cat.nyaa.nyaacore.utils.InventoryUtils;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
@@ -161,7 +162,10 @@ public class CommandHandler implements CommandExecutor {
                     final int powers = Helper.rand(ConfigReader.getMinimalLevel(), ConfigReader.getMaximumLevel());
                     final ItemStack gottenLoot = plugin.lootManager.getRandomLoot(player, powers);
                     if (gottenLoot != null && gottenLoot.getType() != Material.AIR) {
-                        player.getInventory().addItem(gottenLoot);
+                        if (!InventoryUtils.addItem(player, gottenLoot)) {
+                            Location location = player.getLocation();
+                            player.getWorld().dropItem(location, gottenLoot);
+                        }
                         if (sender.isOp()) {
                             sender.sendMessage("§eGave you some random loot!");
                         }
@@ -170,7 +174,11 @@ public class CommandHandler implements CommandExecutor {
                     String name = arg.nextString();
                     ItemStack i = plugin.lootManager.getLootByName(asPlayer(sender), name);
                     if (i != null && i.getType() != Material.AIR) {
-                        asPlayer(sender).getInventory().addItem(i);
+                        Player player = asPlayer(sender);
+                        if (!InventoryUtils.addItem(player, i)) {
+                            Location location = player.getLocation();
+                            player.getWorld().dropItem(location, i);
+                        }
                         if (sender.isOp()) {
                             sender.sendMessage("§eGave you the loot: " + name);
                         }
