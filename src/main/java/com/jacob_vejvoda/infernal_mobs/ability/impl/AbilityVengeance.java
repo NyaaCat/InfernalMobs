@@ -15,7 +15,8 @@ public class AbilityVengeance implements IAbility {
         if (ev.getCause().equals(EntityDamageEvent.DamageCause.THORNS))return;
         if (Helper.possibility(0.5)) {
 //            attacker.damage(ConfigReader.getVengeanceDamage() * 2);
-            attacker.damage(ev.getDamage() * (((double) ConfigReader.getVengeanceDamage()) / 100d));
+            double vDamage = ev.getDamage() * (((double) ConfigReader.getVengeanceDamage()) / 100d);
+            attacker.damage(Math.min(vDamage, ConfigReader.getLevelConfig().getDamage(vDamage, mob.getMobLevel())));
         }
     }
 }
