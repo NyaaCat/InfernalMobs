@@ -1,8 +1,12 @@
 package com.jacob_vejvoda.infernal_mobs.ability;
 
-import com.jacob_vejvoda.infernal_mobs.ability.*;
+import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.*;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.extended.AbilityMeteor;
+import com.jacob_vejvoda.infernal_mobs.ability.impl.extended.AbilityUltraStrike;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -41,7 +45,9 @@ public enum EnumAbilities implements IAbility {
     MOUNTED("mounted", AbilityMounted.class),
     MORPH("morph", AbilityMorph.class),
     GHOST("ghost", AbilityGhost.class),
-    CONFUSING("confusing", AbilityConfusing.class);
+    CONFUSING("confusing", AbilityConfusing.class),
+    METEOR("meteor", AbilityMeteor.class),
+    ULTRASTRIKE("ultrastrike", AbilityUltraStrike.class);
 
     private final IAbility instance;
 
@@ -52,7 +58,20 @@ public enum EnumAbilities implements IAbility {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+        Bukkit.getScheduler().runTask(InfernalMobs.instance, ()->{
+            t.readExtra(this.name());
+        });
         instance = t;
+    }
+
+    public IAbility getInstance() {
+        return instance;
+    }
+
+    public static void reloadAbility(){
+        for (EnumAbilities value : values()) {
+            value.readExtra(value.name());
+        }
     }
 
 

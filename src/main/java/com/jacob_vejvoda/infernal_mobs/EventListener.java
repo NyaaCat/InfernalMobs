@@ -2,15 +2,15 @@ package com.jacob_vejvoda.infernal_mobs;
 
 import cat.nyaa.nyaacore.Message;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import com.jacob_vejvoda.infernal_mobs.utils.ArmorStandUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -19,6 +19,8 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -62,24 +64,28 @@ public class EventListener implements Listener {
         if (this.plugin.mobManager.mobMap.containsKey(mob.getUniqueId())) {
             for (final Entity entity : mob.getNearbyEntities(64.0, 64.0, 64.0)) {
                 if (entity instanceof Player) {
-                    GUI.refreshPlayerScoreboard((Player)entity);
+                    GUI.refreshPlayerScoreboard((Player) entity);
+//                    GUI.refreshBossBar((Player) entity);
                 }
             }
+            Mob im = this.plugin.mobManager.mobMap.get(mob.getUniqueId());
+            Bukkit.getScheduler().runTask(InfernalMobs.instance, () -> BossBarManager.updateMob(im));
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onLightningStrike(final LightningStrikeEvent e) {
-        for (final Entity m : e.getLightning().getNearbyEntities(6.0, 6.0, 6.0)) {
-            if (this.plugin.mobManager.mobMap.containsKey(m.getUniqueId())) {
-                e.setCancelled(true);
-                break;
-            }
-        }
+//        for (final Entity m : e.getLightning().getNearbyEntities(6.0, 6.0, 6.0)) {
+//            if (this.plugin.mobManager.mobMap.containsKey(m.getUniqueId())) {
+//                e.setCancelled(true);
+//                break;
+//            }
+//        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityAttack(final EntityDamageByEntityEvent event) {
+        //todo unexpected fireball damage
         boolean isDirectAttack = true;
         Entity trueVictim = event.getEntity();
         Entity trueAttacker = event.getDamager();
@@ -98,22 +104,48 @@ public class EventListener implements Listener {
         if (plugin.mobManager.mobMap.containsKey(trueVictim.getUniqueId())) {
             // something attacked infernal mob
             if (!(trueAttacker instanceof Player)) return;
-            if (((Player) trueAttacker).getGameMode() == GameMode.CREATIVE) return;
             Mob mob = plugin.mobManager.mobMap.get(trueVictim.getUniqueId());
-            for (EnumAbilities ab : mob.abilityList) {
-                ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
+            mob.lastDamageCause = event;
+            GameMode gameMode = ((Player) trueAttacker).getGameMode();
+            if (gameMode != GameMode.CREATIVE && gameMode != GameMode.SPECTATOR) {
+                for (EnumAbilities ab : mob.abilityList) {
+                    ab.onPlayerAttack((LivingEntity) trueVictim, mob, (Player) trueAttacker, isDirectAttack, event);
+                }
+            }
+            if (ConfigReader.isEnhanceEnabled()) {
+                double resistedDamage = ConfigReader.getLevelConfig().calcResistedDamage(event.getDamage(), mob.getMobLevel());
+                event.setDamage(resistedDamage);
             }
         }
 
         if ((plugin.mobManager.mobMap.containsKey(trueAttacker.getUniqueId()))) {
             // infernal mob attacked something
-            if (!(trueVictim instanceof Player)) return;
-            if (((Player) trueVictim).getGameMode() == GameMode.CREATIVE) return;
+            EntityDamageEvent.DamageCause cause = event.getCause();
+            double originDamage = event.getDamage();
             Mob mob = plugin.mobManager.mobMap.get(trueAttacker.getUniqueId());
-            for (EnumAbilities ab : mob.abilityList) {
-                ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+            if (isValidDamageCause(cause, mob)) {
+                if ((trueVictim instanceof Player)) {
+                    GameMode gameMode = ((Player) trueVictim).getGameMode();
+                    if (gameMode == GameMode.CREATIVE || gameMode == GameMode.SPECTATOR) return;
+                    for (EnumAbilities ab : mob.abilityList) {
+                        ab.onAttackPlayer((LivingEntity) trueAttacker, mob, (Player) trueVictim, isDirectAttack, event);
+                    }
+                }
+                double extraDamage = event.getDamage() - originDamage;
+                if (ConfigReader.isEnhanceEnabled()) {
+                    LevelConfig levelConfig = ConfigReader.getLevelConfig();
+                    double damage = levelConfig.getDamage(originDamage, mob.getMobLevel());
+                    damage += extraDamage;
+                    event.setDamage(damage);
+                }
             }
         }
+    }
+
+    private boolean isValidDamageCause(EntityDamageEvent.DamageCause cause, Mob mob) {
+        return cause.equals(EntityDamageEvent.DamageCause.ENTITY_ATTACK) ||
+                cause.equals(EntityDamageEvent.DamageCause.PROJECTILE) ||
+                cause.equals(EntityDamageEvent.DamageCause.ENTITY_EXPLOSION);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -126,7 +158,7 @@ public class EventListener implements Listener {
         if (!ConfigReader.isEnabledMobType(e.getType())) return;
         if (e.getLocation().getY() < ConfigReader.getNaturalSpawnMinHeight()) return;
         if (!ConfigReader.getEnabledSpawnReasons().contains(event.getSpawnReason())) return;
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
                 plugin.mobManager.infernalNaturalSpawn(e);
@@ -145,25 +177,62 @@ public class EventListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(final EntityDeathEvent event) {
+        if (event.getEntity() instanceof Bat) {
+            try {
+                LivingEntity entity = event.getEntity();
+                List<MetadataValue> metadata = entity.getMetadata("im-drop");
+                if (!metadata.isEmpty()) {
+                    MetadataValue metadataValue = metadata.get(0);
+                    List<ItemStack> value = (List<ItemStack>) metadataValue.value();
+                    event.getDrops().clear();
+                    event.getDrops().addAll(value);
+                }
+            } catch (Exception e) {
+
+            }
+        }
         UUID id = event.getEntity().getUniqueId();
         Mob mob = plugin.mobManager.mobMap.get(id);
         if (mob == null) return;
         LivingEntity mobEntity = event.getEntity();
 
-        for (EnumAbilities ab : mob.abilityList) {
-            ab.onDeath(mobEntity, mob, mobEntity.getKiller(), event);
-        }
 
         // item drop decision
         ItemStack selectedDropItem = null;
         Player killer = mobEntity.getKiller();
-        if (determineShouldDrop(killer != null, (killer!=null) && (killer.getGameMode()==GameMode.CREATIVE))) {
-            ItemStack drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
+        Bat bat = null;
+        if (killer == null) {
+            EntityDamageByEntityEvent lastDamageCause = mob.lastDamageCause;
+            if (lastDamageCause != null) {
+                Entity damager = lastDamageCause.getDamager();
+                if (damager instanceof Projectile) {
+                    ProjectileSource shooter = ((Projectile) damager).getShooter();
+                    if (shooter instanceof Player) {
+                        killer = (Player) shooter;
+                    }
+                } else if (damager instanceof Player) {
+                    killer = ((Player) damager);
+                }
+                event.getEntity().setLastDamageCause(lastDamageCause);
+                bat = ArmorStandUtil.asVictim(mobEntity);
+                bat.setCustomName(mobEntity.getCustomName());
+//                Bukkit.getServer().getPluginManager().callEvent(new EntityDeathEvent(armorStand, dropClone));
+            }
+        }
+        for (EnumAbilities ab : mob.abilityList) {
+            ab.onDeath(mobEntity, mob, killer, event);
+        }
+        if (determineShouldDrop(killer != null, (killer != null) && (Helper.validGamemode(killer)))) {
+            ItemStack drop;
+            if (!mob.isCustomMob) {
+                drop = this.plugin.lootManager.getRandomLoot(killer, mob.getMobLevel());
+            } else {
+                drop = this.plugin.lootManager.getLootByName(killer, mob.customLoot);
+            }
             if (drop != null && drop.getType() != Material.AIR) {
-                final int min = 1;
-                final int max = ConfigReader.getDropChance();
-                final int randomNum = new Random().nextInt(max - min + 1) + min;
-                if (randomNum == 1) {
+                final int percentage = ConfigReader.getDropChance();
+                final int randomNum = new Random().nextInt(100);
+                if (randomNum < percentage) {
                     event.getDrops().add(drop);
                     selectedDropItem = drop;
                 }
@@ -171,13 +240,18 @@ public class EventListener implements Listener {
         }
 
         // set xp drop
-        final int xpm = ConfigReader.getXpMultiplier();
-        final int xp = event.getDroppedExp() * xpm;
-        event.setDroppedExp(xp);
+        if (ConfigReader.isEnhanceEnabled()) {
+            int xp = ConfigReader.getLevelConfig().getExp(event.getDroppedExp(), mob.getMobLevel());
+            event.setDroppedExp(xp);
+        } else {
+            final int xpm = ConfigReader.getXpMultiplier();
+            final int xp = event.getDroppedExp() * xpm;
+            event.setDroppedExp(xp);
+        }
 
         // broadcast death message TODO use ConfigReader
-        if (ConfigReader.isMobDeathMessageEnabled() && event.getEntity().getKiller() != null) {
-            Player player = event.getEntity().getKiller();
+        if (ConfigReader.isMobDeathMessageEnabled() && killer != null) {
+            Player player = killer;
             String playerName = player.getName();
             String mobName;
             if (event.getEntity().getCustomName() != null) {
@@ -186,6 +260,7 @@ public class EventListener implements Listener {
                 mobName = event.getEntity().getType().name();
             }
             boolean broadcastToAllWorld = ConfigReader.isDeathMessageBroadcastAllWorld();
+            Message message = new Message("");
 
             if (this.plugin.getConfig().getList("deathMessages") != null) {
                 String deathMessage = Helper.randomItem(plugin.getConfig().getStringList("deathMessages"));
@@ -194,63 +269,64 @@ public class EventListener implements Listener {
                 deathMessage = deathMessage.replace("{mob}", mobName);
                 ItemStack item = player.getInventory().getItemInMainHand();
                 if (item != null && !item.getType().equals(Material.AIR)) {
-                    if (broadcastToAllWorld) {
-                        new Message("")
-                                .append(deathMessage, item)
-                                .broadcast();
-                    } else {
-                        new Message("")
-                                .append(deathMessage, item)
-                                .broadcast(player.getLocation().getWorld());
-                    }
+                    message.append(deathMessage, item);
                 } else {
-                    if (broadcastToAllWorld) {
-                        new Message(
-                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                        ).broadcast();
-                    } else {
-                        new Message(
-                                deathMessage.replace("{itemName}", "fist").replace("{itemName:0}", "fist")
-                        ).broadcast(player.getLocation().getWorld());
-                    }
+                    message.append(deathMessage.replace("{itemName}", "fist")
+                            .replace("{itemName:0}", "fist"));
                 }
             } else {
                 System.out.println("No valid death messages found!");
             }
-
+            message.append("\n");
+            String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
             if (plugin.getConfig().isList("dropMessages") && selectedDropItem != null) {
-                String msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
-                msg = ChatColor.translateAlternateColorCodes('&', msg);
-                msg = msg.replace("{player}", playerName);
-                msg = msg.replace("{mob}", mobName);
-                if (broadcastToAllWorld) {
-                    new Message("")
-                            .append(msg, selectedDropItem)
-                            .broadcast();
-                } else {
-                    new Message("")
-                            .append(msg, selectedDropItem)
-                            .broadcast(player.getLocation().getWorld());
-                }
+                msg = Helper.randomItem(plugin.getConfig().getStringList("dropMessages"));
+//                message.append(msg);
+//                if (broadcastToAllWorld) {
+//                    new Message("")
+//                            .append(msg, selectedDropItem)
+//                            .broadcast();
+//                } else {
+//                    new Message("")
+//                            .append(msg, selectedDropItem)
+//                            .broadcast(player.getLocation().getWorld());
+//                }
             }
 
             if (plugin.getConfig().isList("nodropMessages") && selectedDropItem == null) {
-                String msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
-                msg = ChatColor.translateAlternateColorCodes('&', msg);
-                msg = msg.replace("{player}", playerName);
-                msg = msg.replace("{mob}", mobName);
-                if (broadcastToAllWorld) {
-                    new Message(msg)
-                            .broadcast();
-                } else {
-                    new Message(msg)
-                            .broadcast(player.getLocation().getWorld());
-                }
+                msg = Helper.randomItem(plugin.getConfig().getStringList("nodropMessages"));
+//                if (broadcastToAllWorld) {
+//                    new Message(msg)
+//                            .broadcast();
+//                } else {
+//                    new Message(msg)
+//                            .broadcast(player.getLocation().getWorld());
+//                }
             }
+            msg = ChatColor.translateAlternateColorCodes('&', msg);
+            msg = msg.replace("{player}", playerName);
+            msg = msg.replace("{mob}", mobName);
+            if (selectedDropItem == null) {
+                message.append(msg);
+            } else {
+                message.append(msg, selectedDropItem);
+            }
+            if (broadcastToAllWorld) {
+                Broadcaster.broadcastToAllWorld(message, player);
+            } else {
+                Broadcaster.broadcast(player.getLocation().getWorld(), message, player);
+            }
+        }
+        if (bat != null) {
+            List<ItemStack> drops = event.getDrops();
+            List<ItemStack> dropClone = new ArrayList<>(drops);
+            drops.clear();
+            bat.setMetadata("im-drop", new FixedMetadataValue(InfernalMobs.instance, dropClone));
+            bat.damage(bat.getHealth() * 10, killer);
         }
 
         plugin.mobManager.mobMap.remove(id);
-
+        BossBarManager.removeMob(mob, mobEntity);
         // TODO event
     }
 

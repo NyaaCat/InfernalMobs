@@ -51,4 +51,8 @@ public class LootManager {
     public void save() {
         cfg.dump(new File(plugin.getDataFolder(), "loot_v2.yml"));
     }
+
+    public boolean hasLootForName(String name) {
+        return cfg.lootItems.containsKey(name);
+    }
 }

@@ -1,6 +1,10 @@
 package com.jacob_vejvoda.infernal_mobs;
 
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
+import com.jacob_vejvoda.infernal_mobs.config.AbilityConfig;
+import com.jacob_vejvoda.infernal_mobs.config.BroadcastConfig;
+import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
+import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
 import com.jacob_vejvoda.infernal_mobs.persist.ParticleEffect;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -14,6 +18,10 @@ import java.util.List;
 import static org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 
 public class ConfigReader {
+    private static LevelConfig levelConfig;
+    private static CustomMobConfig customMobConfig;
+    private static BroadcastConfig broadcastConfig;
+
     private static ConfigurationSection cfg() {
         return InfernalMobs.instance.getConfig();
     }
@@ -284,5 +292,64 @@ public class ConfigReader {
 
     public static boolean isDeathMessageBroadcastAllWorld() {
         return cfg().getBoolean("broadcastToAllWorld", false);
+    }
+
+    public static boolean isBossbarEnabled(){return cfg().getBoolean("bossBarEnabled", true);}
+
+    public static boolean isEnhanceEnabled() {
+        return cfg().getBoolean("configEnhance", false);
+    }
+
+    public static LevelConfig getLevelConfig() {
+        return levelConfig == null? loadLevelConfig(): levelConfig;
+    }
+
+    private static LevelConfig loadLevelConfig() {
+        levelConfig = new LevelConfig();
+        levelConfig.load();
+        return levelConfig;
+    }
+
+    public static String getBossbarDeathHint() {
+        return " ".concat(cfg().getString("bossbarDeathHint"));
+    }
+
+    public static CustomMobConfig getCustomMobConfig() {
+        return customMobConfig == null? loadCustomMob() : customMobConfig;
+    }
+
+    private static CustomMobConfig loadCustomMob() {
+        customMobConfig = new CustomMobConfig();
+        customMobConfig.load();
+        return customMobConfig;
+    }
+
+    public static int getMobRandomTick() {
+        return cfg().getInt("mobRandomTick", 20);
+    }
+
+    public static AbilityConfig getAbilityConfig() {
+        return getLevelConfig().abilityConfig;
+    }
+
+    public static BroadcastConfig getBroadcastConfig(){
+        return broadcastConfig == null? loadBroadcastConfig():broadcastConfig;
+    }
+
+    private static BroadcastConfig loadBroadcastConfig() {
+        broadcastConfig = new BroadcastConfig();
+        broadcastConfig.load();
+        return broadcastConfig;
+    }
+
+
+    public static void reload() {
+        getLevelConfig().load();
+        getCustomMobConfig().load();
+        getBroadcastConfig().load();
+    }
+
+    public static String getLanguage() {
+        return cfg().getString("language");
     }
 }

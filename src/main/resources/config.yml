@@ -30,7 +30,9 @@ namePrefix: '&fInfernal'
 nameTagsLevel: 1
 nameTagsName: '&f<prefix> <mobName>'
 bossBarsName: '&fLevel <mobLevel> &f<prefix> <mobName>'
+bossbarDeathHint: "[died]"
 enableBossBar: true
+configEnhance: true
 bossBarSettings:
   defaultColor: "PINK"
   defaultStyle: "SOLID"
@@ -166,7 +168,6 @@ gravity: true
 flying: true
 mounted: true
 morph: true
-ghost: true
 confusing: true
 ghost: true
 mamaSpawnAmount: 3
@@ -274,3 +275,4 @@ enableDrops: true
 dropChance: 1
 enableFarmingDrops: false
 naturalSpawnHeight: 0
+mobRandomTick: 20
