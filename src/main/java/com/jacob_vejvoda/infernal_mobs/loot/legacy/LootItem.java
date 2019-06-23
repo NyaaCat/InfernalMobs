@@ -1,4 +1,4 @@
-package com.jacob_vejvoda.infernal_mobs.loot;
+package com.jacob_vejvoda.infernal_mobs.loot.legacy;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

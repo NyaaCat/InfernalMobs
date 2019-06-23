@@ -3,7 +3,7 @@ package com.jacob_vejvoda.infernal_mobs;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
-import com.jacob_vejvoda.infernal_mobs.loot.LootManager;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootManager;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

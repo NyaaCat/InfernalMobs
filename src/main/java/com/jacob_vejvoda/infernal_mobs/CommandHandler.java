@@ -5,7 +5,7 @@ import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
-import com.jacob_vejvoda.infernal_mobs.loot.LootItem;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootItem;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.*;
 import org.bukkit.command.Command;

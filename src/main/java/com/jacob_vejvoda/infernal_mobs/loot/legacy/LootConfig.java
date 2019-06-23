@@ -1,4 +1,4 @@
-package com.jacob_vejvoda.infernal_mobs.loot;
+package com.jacob_vejvoda.infernal_mobs.loot.legacy;
 
 import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import org.bukkit.NamespacedKey;
