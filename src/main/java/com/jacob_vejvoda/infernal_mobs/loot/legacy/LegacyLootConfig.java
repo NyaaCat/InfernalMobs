@@ -11,19 +11,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** List of loot items and drop chance table */
-public class LootConfig {
+public class LegacyLootConfig {
 
-    public Map<String, LootItem> lootItems = new HashMap<>();
+    public Map<String, LegacyLootItem> lootItems = new HashMap<>();
     public Map<Integer, Map<String, Double>> dropMap = new HashMap<>(); // Map<infernalLevel, Map<dropItemName, dropWeight>>
 
-    LootConfig() {
+    LegacyLootConfig() {
     }
 
     public static <T> T weightedRandom(Map<T, Double> candidates) {
         if (candidates.size() <= 0) return null;
         double sum = 0;
         for (Double d : candidates.values()) sum += d;
-        double random = LootManager.rnd.nextDouble() * sum;
+        double random = LegacyLootManager.rnd.nextDouble() * sum;
         sum = 0;
         T ret = null;
         for (Map.Entry<T, Double> e : candidates.entrySet()) {
@@ -36,7 +36,7 @@ public class LootConfig {
         return ret;
     }
 
-    public LootItem getRandomDrop(int level) {
+    public LegacyLootItem getRandomDrop(int level) {
         if (!dropMap.containsKey(level)) {
             InfernalMobs.instance.getLogger().warning("No drop found for SpawnConfig: " + level);
             return null;
@@ -46,7 +46,7 @@ public class LootConfig {
             InfernalMobs.instance.getLogger().warning("No drop found for SpawnConfig: " + level);
             return null;
         }
-        LootItem item = lootItems.get(name);
+        LegacyLootItem item = lootItems.get(name);
         if (item == null) {
             InfernalMobs.instance.getLogger().warning("Loot item not found:" + name);
             return null;
@@ -54,8 +54,8 @@ public class LootConfig {
         return item;
     }
 
-    public static LootConfig parse(File f) {
-        LootConfig l = new LootConfig();
+    public static LegacyLootConfig parse(File f) {
+        LegacyLootConfig l = new LegacyLootConfig();
         l.lootItems = new HashMap<>();
         l.dropMap = new HashMap<>();
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(f);
@@ -63,10 +63,10 @@ public class LootConfig {
         ConfigurationSection dropMap = cfg.getConfigurationSection("dropMap");
         for (String itemName : items.getKeys(false)) {
             ConfigurationSection s = items.getConfigurationSection(itemName);
-            LootItem i = new LootItem();
+            LegacyLootItem i = new LegacyLootItem();
             i.item = s.getItemStack("item");
-            if (s.isString("amountRange")) i.amountRange = RangePair.parse(s.getString("amountRange"));
-            if (s.isString("damageRange")) i.damageRange = RangePair.parse(s.getString("damageRange"));
+            if (s.isString("amountRange")) i.amountRange = LegacyRangePair.parse(s.getString("amountRange"));
+            if (s.isString("damageRange")) i.damageRange = LegacyRangePair.parse(s.getString("damageRange"));
             if (s.isList("commands")) i.commands = s.getStringList("commands");
             if (s.isConfigurationSection("extraEnchants")) {
                 i.extraEnchants = new HashMap<>();
@@ -78,10 +78,10 @@ public class LootConfig {
                     } catch (IllegalArgumentException e) {
                         enchantment = Enchantment.getByName(ench);
                     }
-                    i.extraEnchants.put(enchantment, RangePair.parse(sec.getString(ench)));
+                    i.extraEnchants.put(enchantment, LegacyRangePair.parse(sec.getString(ench)));
                 }
             }
-            if (s.isString("amountRange")) i.amountRange = RangePair.parse(s.getString("amountRange"));
+            if (s.isString("amountRange")) i.amountRange = LegacyRangePair.parse(s.getString("amountRange"));
             l.lootItems.put(itemName, i);
         }
 
@@ -104,7 +104,7 @@ public class LootConfig {
         ConfigurationSection items = cfg.createSection("lootItems");
         ConfigurationSection dropMap = cfg.createSection("dropMap");
         for (String name : lootItems.keySet()) {
-            LootItem item = lootItems.get(name);
+            LegacyLootItem item = lootItems.get(name);
             ConfigurationSection s = items.createSection(name);
             s.set("item", item.item);
             if (item.amountRange != null) s.set("amountRange", item.amountRange.toString());

@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 /** Template of items to be given to players */
-public class LootItem {
+public class LegacyLootItem {
     public ItemStack item;
-    public RangePair damageRange;
-    public RangePair amountRange;
-    public Map<Enchantment, RangePair> extraEnchants;
+    public LegacyRangePair damageRange;
+    public LegacyRangePair amountRange;
+    public Map<Enchantment, LegacyRangePair> extraEnchants;
     public List<String> commands;
 
     /**

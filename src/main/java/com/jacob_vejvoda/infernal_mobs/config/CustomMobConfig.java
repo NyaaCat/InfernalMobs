@@ -7,8 +7,8 @@ import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.MobManager;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
-import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootConfig;
-import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootManager;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LegacyLootConfig;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LegacyLootManager;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -77,7 +77,7 @@ public class CustomMobConfig extends FileConfigure {
     private String getLoot(CustomMob customMob) {
         List<String> loots = customMob.loots;
         if (loots == null || loots.isEmpty()) return null;
-        LootManager lootManager = InfernalMobs.instance.lootManager;
+        LegacyLootManager lootManager = InfernalMobs.instance.lootManager;
         Map<String, Double> randomMap = new LinkedHashMap<>();
         loots.forEach(s -> {
             try {
@@ -90,7 +90,7 @@ public class CustomMobConfig extends FileConfigure {
                 InfernalMobs.instance.getLogger().log(Level.WARNING, "loot \"" + s + "\" for custom mob \"" + customMob.name + "\" is not valid.");
             }
         });
-        return LootConfig.weightedRandom(randomMap);
+        return LegacyLootConfig.weightedRandom(randomMap);
     }
 
 

@@ -5,7 +5,7 @@ import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalMobSpawnEvent;
 import com.jacob_vejvoda.infernal_mobs.api.InfernalSpawnReason;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
-import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootItem;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LegacyLootItem;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -93,7 +93,7 @@ public class CommandHandler implements CommandExecutor {
                     return true;
                 }
                 String name = arg.nextString();
-                LootItem li = new LootItem();
+                LegacyLootItem li = new LegacyLootItem();
                 li.item = item.clone();
                 if (plugin.lootManager.cfg.lootItems.containsKey(name)) {
                     sender.sendMessage("Fail. Duplicated name");

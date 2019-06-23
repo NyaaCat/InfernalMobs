@@ -3,7 +3,7 @@ package com.jacob_vejvoda.infernal_mobs;
 import com.jacob_vejvoda.infernal_mobs.ability.EnumAbilities;
 import com.jacob_vejvoda.infernal_mobs.config.CustomMobConfig;
 import com.jacob_vejvoda.infernal_mobs.config.LevelConfig;
-import com.jacob_vejvoda.infernal_mobs.loot.legacy.LootManager;
+import com.jacob_vejvoda.infernal_mobs.loot.legacy.LegacyLootManager;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -27,7 +27,7 @@ public class InfernalMobs extends JavaPlugin {
     public EventListener events;
     public CommandHandler cmd;
     public MobManager mobManager;
-    public LootManager lootManager;
+    public LegacyLootManager lootManager;
     public LevelConfig levelConfig;
     public CustomMobConfig customMobConfig;
     private AsyncInfernalTicker asyncInfernalTicker;
@@ -46,7 +46,7 @@ public class InfernalMobs extends JavaPlugin {
         this.cmd = new CommandHandler(this);
         this.events = new EventListener(this);
         this.mobManager = new MobManager(this);
-        this.lootManager = new LootManager(this);
+        this.lootManager = new LegacyLootManager(this);
         this.getCommand("infernalmobs").setExecutor(cmd);
         this.getServer().getPluginManager().registerEvents(this.events, this);
         I18n i18n = new I18n();

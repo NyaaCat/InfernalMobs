@@ -8,22 +8,22 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.*;
 
-public class LootManager {
+public class LegacyLootManager {
     public static final Random rnd = new Random();
 
     private final InfernalMobs plugin;
-    public LootConfig cfg;
+    public LegacyLootConfig cfg;
 
-    public LootManager(InfernalMobs plugin) {
+    public LegacyLootManager(InfernalMobs plugin) {
         this.plugin = plugin;
         reload();
     }
 
     public void reload() {
         if (new File(plugin.getDataFolder(), "loot_v2.yml").isFile()) { // loot file exists
-            cfg = LootConfig.parse(new File(plugin.getDataFolder(), "loot_v2.yml"));
+            cfg = LegacyLootConfig.parse(new File(plugin.getDataFolder(), "loot_v2.yml"));
         } else { // no config file
-            cfg = new LootConfig();
+            cfg = new LegacyLootConfig();
             save();
         }
     }
@@ -42,7 +42,7 @@ public class LootManager {
      * @return the loot, or null
      */
     public ItemStack getRandomLoot(final Player player, final int powers) {
-        LootItem loot = cfg.getRandomDrop(powers);
+        LegacyLootItem loot = cfg.getRandomDrop(powers);
         if (loot == null) return new ItemStack(Material.AIR);
         if (player != null) loot.applyCommands(player);
         return loot.get();
