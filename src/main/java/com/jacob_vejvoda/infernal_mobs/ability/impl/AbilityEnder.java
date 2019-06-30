@@ -5,6 +5,9 @@ import com.jacob_vejvoda.infernal_mobs.ability.IAbility;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -17,16 +20,22 @@ public class AbilityEnder implements IAbility {
         if (!isDirectAttack) {
             if (Helper.possibility(0.5)) return;
         } else if (Helper.possibility(0.8)) return;
-        double x = attacker.getLocation().getX() + Helper.rand(-5D, 5D);
-        double z = attacker.getLocation().getZ() + Helper.rand(-5D, 5D);
-        double y = attacker.getWorld().getHighestBlockYAt((int) x, (int) z) + 1;
-        Location to = new Location(mobEntity.getWorld(), x, y, z);
-        EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), to);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return;
+        World attackerWorld = attacker.getWorld();
+        for (int i = 0; i < 20; i++) {
+            double x = attacker.getLocation().getX() + Helper.rand(-5D, 5D);
+            double z = attacker.getLocation().getZ() + Helper.rand(-5D, 5D);
+            double y = attacker.getLocation().getBlockZ() + Helper.rand(-5D, 5D);
+            Location to = new Location(attackerWorld, x, y, z);
+            if(!to.getBlock().getType().isSolid()) {
+                EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), to);
+                Bukkit.getPluginManager().callEvent(event);
+                if (event.isCancelled()) {
+                    return;
+                }
+                mobEntity.teleport(new Location(mobEntity.getWorld(), x, y, z));
+            }
         }
-        mobEntity.teleport(new Location(mobEntity.getWorld(), x, y, z));
+
     }
 
     @Override

@@ -1,12 +1,17 @@
 package com.jacob_vejvoda.infernal_mobs.ability;
 
+import cat.nyaa.nyaacore.Pair;
 import com.jacob_vejvoda.infernal_mobs.Helper;
+import com.jacob_vejvoda.infernal_mobs.InfernalMobs;
 import com.jacob_vejvoda.infernal_mobs.persist.Mob;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -28,12 +33,17 @@ public abstract class AbilityProjectile implements IAbility {
     protected double mainSpeed = 1;
     @Property
     protected double extraSpeedShift = -0.5;
+    @Property
+    protected int cooldown = 20;
+
+    final List<Pair<Player, Mob>> cdList = new ArrayList<>();
 
     protected Class<? extends Projectile> projectileType = Arrow.class;
 
     @Override
     public void perCycleEffect(LivingEntity mobEntity, Mob mob) {
         if (!Helper.possibility(perCycleChance)) return;
+
         List<Player> nearbyPlayers = mobEntity.getNearbyEntities(effectiveRange, effectiveRange, effectiveRange).stream()
                 .filter(entity -> entity instanceof Player)
                 .map(entity -> ((Player) entity))
@@ -58,6 +68,10 @@ public abstract class AbilityProjectile implements IAbility {
     @Override
     public void onPlayerAttack(LivingEntity mobEntity, Mob mob, Player attacker, boolean isDirectAttack, EntityDamageByEntityEvent ev) {
         if (!Helper.possibility(onPlayerAttackChance)) return;
+//        final Pair<Player, Mob> playerMobPair = new Pair<>(attacker, mob);
+//        if (cdList.contains(playerMobPair)){
+//            return;
+//        }
         double speed = mainSpeed + extraSpeedShift;
         if (speed <= 0.1) speed = 0.1;
         Vector vector = Helper.unitDirectionVector(mobEntity.getEyeLocation().toVector(), attacker.getEyeLocation().toVector())
@@ -65,6 +79,13 @@ public abstract class AbilityProjectile implements IAbility {
         Projectile pro = launch(mobEntity, attacker, vector, false);
         postLaunch(pro,mobEntity ,attacker );
         launchExtraProjectiles(vector, mobEntity, attacker);
+//        cdList.add(playerMobPair);
+//        new BukkitRunnable(){
+//            @Override
+//            public void run() {
+//                cdList.remove(playerMobPair);
+//            }
+//        }.runTaskLater(InfernalMobs.instance, cooldown);
     }
 
     protected abstract void postLaunch(Projectile projectile, LivingEntity source, Entity target);
