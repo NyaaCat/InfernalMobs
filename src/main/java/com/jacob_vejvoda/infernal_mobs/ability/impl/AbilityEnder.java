@@ -22,9 +22,9 @@ public class AbilityEnder implements IAbility {
         } else if (Helper.possibility(0.8)) return;
         World attackerWorld = attacker.getWorld();
         for (int i = 0; i < 20; i++) {
-            double x = attacker.getLocation().getX() + Helper.rand(-5D, 5D);
-            double z = attacker.getLocation().getZ() + Helper.rand(-5D, 5D);
-            double y = attacker.getLocation().getBlockZ() + Helper.rand(-5D, 5D);
+            double x = attacker.getLocation().getX() + Helper.rand(-6D, 6D);
+            double z = attacker.getLocation().getZ() + Helper.rand(-6D, 6D);
+            double y = attacker.getLocation().getBlockY() + Helper.rand(-3D, 5D);
             Location to = new Location(attackerWorld, x, y, z);
             if(!to.getBlock().getType().isSolid()) {
                 EntityTeleportEvent event = new EntityTeleportEvent(mobEntity, mobEntity.getLocation(), to);
@@ -33,9 +33,9 @@ public class AbilityEnder implements IAbility {
                     return;
                 }
                 mobEntity.teleport(new Location(mobEntity.getWorld(), x, y, z));
+                return;
             }
         }
-
     }
 
     @Override
