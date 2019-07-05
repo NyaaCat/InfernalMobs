@@ -27,7 +27,7 @@ public class AbilityVengeance implements IAbility {
         if (Helper.possibility(0.5)) {
 //            attacker.damage(ConfigReader.getVengeanceDamage() * 2);
             double vDamage = ev.getFinalDamage() * (((double) ConfigReader.getVengeanceDamage()) / 100d);
-            attacker.damage(Math.min(vDamage, ConfigReader.getLevelConfig().getDamage(vDamage, mob.getMobLevel())), mobEntity);
+            attacker.damage(Math.min(vDamage, ConfigReader.getLevelConfig().getDamage(vDamage, mob.getMobLevel())));
             cdList.add(playerMobPair);
             new BukkitRunnable(){
                 @Override
